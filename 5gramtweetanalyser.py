@@ -1,11 +1,13 @@
 from hyperdimensionalsemanticspace import SemanticSpace
-import sparsevectors
+import json
 import xml.etree.ElementTree
+
 import random
 import os
 import re
+
+import sparsevectors
 from logger import logger
-import json
 from confusionmatrix import ConfusionMatrix
 
 
@@ -58,27 +60,33 @@ def readgender(genderfile):
 targetlabel = ""
 testvectors = {}
 trainvectors = {}
-testtrainfraction = 0.1
+window = 5
+categories = ["male", "female"]
+authornametable = {}
+targets = set()
+targetspace = {}
+authorspace = {}  # can probably take this out
+ngramspace = SemanticSpace()
+ngramspace.addoperator("sequence")
+confusion = ConfusionMatrix()
+categorytable = {}
+
 debug = False
 monitor = True
 error = True
-authornametable = {}
+
+testtrainfraction = 0.1
 testbatchsize = 100
 itempooldepth = 1  # keep this odd to avoid annoying ties
 authorcategorisation = False
 gendercategorisation = False
 textcategorisation = True
-targets = set()
-targetspace = {}
-authorspace = {}  # can probably take this out
-window = 5
-ngramspace = SemanticSpace()
-ngramspace.addoperator("sequence")
-categories = ["male", "female"]
-confusion = ConfusionMatrix()
+averagelinkage = True
+maxlinkage = False
 
+wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.wordspace"
 resourcedirectory = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/text/"
-
+genderfacitfilename = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/en.txt"
 filenamepattern = ".+\.xml"
 filenamelist = []
 for filename in os.listdir(resourcedirectory):
@@ -87,25 +95,18 @@ for filename in os.listdir(resourcedirectory):
         filenamelist.append(os.path.join(resourcedirectory, filename))
 
 logger("Reading categories from facit file ", monitor)
-genderfacitfilename = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/en.txt"
 readgender(genderfacitfilename)
 
 random.shuffle(filenamelist)
 logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", monitor)
-wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.wordspace"
 train = False
 if train:
-    batch = 50
-    i = 0
     for file in filenamelist:
         i += 1
         logger("Computing ngram frequency-based weights with " + str(i) + " files " + str(file), debug)
         e = xml.etree.ElementTree.parse(file).getroot()
         for b in e.iter("document"):
             trainglobal(b.text)
-        if i > batch:
-            logger("Finished computing weights of ngrams with " + i + " files processed.", monitor)
-            break
     logger("Writing weights to " + wordspacefile, monitor)
     ngramspace.outputwordspace(wordspacefile)
 else:
@@ -119,14 +120,11 @@ else:
             if batch > 0 and i > batch:
                 logger("Skipped rest of weights after " + str(i) + " items.", monitor)
                 break
+
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
     filenamelist = filenamelist[:testbatchsize]
-
 logger("Going on with a file list of " + str(testbatchsize) + " items.", monitor)
-
-
-categorytable = {}
 
 if textcategorisation:
     logger("Text target space", monitor)
@@ -139,12 +137,11 @@ if gendercategorisation:
         targetspace[cat] = {}
         targets.add(cat)
 
+logger("Started training files.", monitor)
 authorindex = 0
 textindex = 0
 testvectorantal = 0
 trainvectorantal = 0
-
-logger("Started training files.", monitor)
 for file in filenamelist:
     authorindex += 1
     authornametable[authorindex] = file.split(".")[0].split("/")[-1]
@@ -185,8 +182,6 @@ logger("Done training files.", monitor)
 logger("Testing targetspace with " + str(len(targetspace)) + " categories, " + str(testvectorantal) +
        " test items and " + str(trainvectorantal) +
        " training cases. ", monitor)
-averagelinkage = True
-maxlinkage = False
 logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
 for authorindex in testvectors:
     logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
