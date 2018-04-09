@@ -59,7 +59,7 @@ monitor = True
 error = True
 
 testtrainfraction = 0.1
-testbatchsize = 100
+testbatchsize = 1000
 itempooldepth = 3  # keep this odd to avoid annoying ties
 authorcategorisation = True
 gendercategorisation = False
