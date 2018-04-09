@@ -11,8 +11,8 @@ debug = False
 monitor = True
 error = True
 
-wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordspace"
-wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordstats"
+wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.s.wordspace"
+wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.s.wordstats"
 resourcedirectory = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/text/"
 
 charspace = {}
@@ -59,6 +59,7 @@ for file in filenamelist:
     e = xml.etree.ElementTree.parse(file).getroot()
     for b in e.iter("document"):
         string = b.text
+        str(string).replace("\n","")
         windows = [string[ii:ii + window] for ii in range(len(string) - window + 1)]
         for sequence in windows:
             seen[sequence] += 1
@@ -67,7 +68,6 @@ for file in filenamelist:
                 itemj = {}
                 itemj["string"] = sequence
                 itemj["indexvector"] = thisvector
-                vectoroutfile.write(pickle.dumps(itemj, protocol=0))
-                vectoroutfile.flush()
+                pickle.dump(itemj, vectoroutfile)
 
 
