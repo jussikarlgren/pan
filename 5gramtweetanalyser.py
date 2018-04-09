@@ -116,7 +116,6 @@ for file in filenamelist:
     authornametable[authorindex] = file.split(".")[0].split("/")[-1]
     logger("Starting training " + str(authorindex) + " " + file, debug)
     e = xml.etree.ElementTree.parse(file).getroot()
-    authorspace[authorindex] = {}
     trainvectors[authorindex] = []
     testvectors[authorindex] = []
     thesevectors = []
