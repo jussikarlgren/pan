@@ -1,4 +1,4 @@
-import sparsevectorsps as sparsevectors
+import sparsevectors
 import math
 from logger import logger
 import json
