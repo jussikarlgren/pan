@@ -20,10 +20,10 @@ def tweetvector(string):
         for sequence in windows:
             if ngramspace.contains(sequence):
                 thisvector = ngramspace.indexspace[sequence]
-                ngramspace.observe(sequence)
+#                 ngramspace.observe(sequence)  # should we be learning stuff now? naaw.
             else:
                 thisvector = stringspace.makevector(sequence)
-                ngramspace.additem(sequence, thisvector)
+#                ngramspace.additem(sequence, thisvector)  # should it be added to cache? naaw.
             factor = ngramspace.frequencyweight(sequence)
             uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
     return uvector
@@ -67,6 +67,7 @@ gendercategorisation = False
 textcategorisation = True
 averagelinkage = True
 maxlinkage = False
+frequencythreshold = 100
 
 wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordspace"
 wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordstats"
@@ -87,10 +88,11 @@ logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", 
 
 
 # batch = 61881  # 31881 covers up to frequency 100; # 6630 is up frequency 500; set to zero for full set
-logger("Reading vectors from " + wordspacefile, monitor)
-ngramspace.importindexvectors(wordspacefile)
 logger("Reading frequencies from " + wordstatsfile, monitor)
-ngramspace.importindexvectors(wordstatsfile)
+ngramspace.importstats(wordstatsfile)
+logger("Reading vectors from " + wordspacefile, monitor)
+(n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
+logger("Imported " + n + " entirely new vectors and " + m + " previously known ones.", monitor)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
