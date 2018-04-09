@@ -104,7 +104,7 @@ class SemanticSpace:
                     seqstats = line.rstrip().split("\t")
                     if not self.contains(seqstats[0]):
                         self.additem(seqstats[0])
-                    self.globalfrequency[seqstats[0]] = seqstats[1]
+                    self.globalfrequency[seqstats[0]] = int(seqstats[1])
                     self.bign += int(seqstats[1])
                 except IndexError:
                     logger("***" + str(i) + " " + line.rstrip(), debug)
