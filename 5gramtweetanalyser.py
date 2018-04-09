@@ -1,7 +1,8 @@
 from hyperdimensionalsemanticspace import SemanticSpace
-import json
 import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
+from propertyreader import load_properties
+
 
 import random
 import os
@@ -10,6 +11,27 @@ import re
 import sparsevectors
 from logger import logger
 from confusionmatrix import ConfusionMatrix
+
+properties = load_properties("5gramtweetanalyser.properties")
+window = int(properties["window"])
+debug = bool(properties["debug"])
+monitor = bool(properties["monitor"])
+error = bool(properties["error"])
+testtrainfraction = float(properties["testtrainfraction"])
+testbatchsize = int(properties["testbatchsize"])
+itempooldepth = int(properties["itempooldepth"])
+authorcategorisation = bool(properties["authorcategorisation"])
+gendercategorisation = bool(properties["gendercategorisation"])
+textcategorisation = bool(properties["textcategorisation"])
+averagelinkage = bool(properties["averagelinkage"])
+maxlinkage = bool(properties["maxlinkage"])
+wordspacefile = str(properties["wordspacefile"])
+cachevectors = bool(properties["cachevectors"])
+frequencythreshold = int(properties["frequencythreshold"])
+wordstatsfile = str(properties["wordstatsfile"])
+resourcedirectory = str(properties["resourcedirectory"])
+filenamepattern = str(properties["filenamepattern"])
+genderfacitfilename = str(properties["genderfacitfilename"])
 
 
 def tweetvector(string):
@@ -40,39 +62,15 @@ def readgender(genderfile):
 targetlabel = ""
 testvectors = {}
 trainvectors = {}
-window = 5
-categories = ["male", "female"]
 authornametable = {}
 targets = set()
 targetspace = {}
-authorspace = {}  # can probably take this out
+categorytable = {}
+categories = ["male", "female"]
 ngramspace = SemanticSpace()
 ngramspace.addoperator("sequence")
-confusion = ConfusionMatrix()
-categorytable = {}
-dimensionality = 2000
-
 stringspace = StringSequenceSpace(ngramspace.dimensionality, ngramspace.denseness)
 
-debug = False
-monitor = True
-error = True
-
-testtrainfraction = 0.1
-testbatchsize = 1000
-itempooldepth = 3  # keep this odd to avoid annoying ties
-authorcategorisation = True
-gendercategorisation = False
-textcategorisation = False
-averagelinkage = True
-maxlinkage = False
-frequencythreshold = 100
-
-wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordspace"
-wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordstats"
-resourcedirectory = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/text/"
-genderfacitfilename = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/en.txt"
-filenamepattern = ".+\.xml"
 filenamelist = []
 for filename in os.listdir(resourcedirectory):
     hitlist = re.match(filenamepattern, filename)
@@ -85,11 +83,8 @@ readgender(genderfacitfilename)
 random.shuffle(filenamelist)
 logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", monitor)
 
-
-# batch = 61881  # 31881 covers up to frequency 100; # 6630 is up frequency 500; set to zero for full set
 logger("Reading frequencies from " + wordstatsfile, monitor)
 ngramspace.importstats(wordstatsfile)
-cachevectors = False
 if cachevectors:
     logger("Reading vectors from " + wordspacefile, monitor)
     (n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
@@ -157,32 +152,32 @@ logger("Testing targetspace with " + str(len(targetspace)) + " categories, " + s
        " test items and " + str(trainvectorantal) +
        " training cases. ", monitor)
 
-for itempooldepth in [1, 3, 5, 7, 9, 11]:
-    logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
-    for authorindex in testvectors:
-        logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
-        targetscore = {}
-        for target in targets:
-            targetscore[target] = 0
-        for testfile in testvectors[authorindex]:
-            if averagelinkage:  # take all test sentences and sum their scores
-                for target in targets:
-                    targetscore[target] += sparsevectors.sparsecosine(targetspace[target], testfile[1])
-            elif maxlinkage:    # use only the closest sentence to match scores
-                for target in targets:
-                    a = sparsevectors.sparsecosine(targetspace[target], testfile[1])
-                    if a > targetscore[target]:
-                        targetscore[target] = a
-        sortedtargets = sorted(targets, key=lambda ia: targetscore[ia], reverse=True)
-        targetvote = {}
-        for target in targets:
-            for cat in categories:
-                targetvote[cat] = 0
-        for pp in sortedtargets[:itempooldepth]:
-            targetvote[categorytable[pp]] += 1
-            logger(str(pp) + "\t" + str(categorytable[pp]) + "\t" + str(targetscore[pp]), debug)
-        sortedpredictions = sorted(categories, key=lambda ia: targetvote[ia], reverse=True)
-        prediction = sortedpredictions[0]
-        confusion.addconfusion(facittable[authornametable[authorindex]], prediction)
-    logger("Done testing files.", monitor)
-    confusion.evaluate()
+confusion = ConfusionMatrix()
+logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
+for authorindex in testvectors:
+    logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
+    targetscore = {}
+    for target in targets:
+        targetscore[target] = 0
+    for testfile in testvectors[authorindex]:
+        if averagelinkage:  # take all test sentences and sum their scores
+            for target in targets:
+                targetscore[target] += sparsevectors.sparsecosine(targetspace[target], testfile[1])
+        elif maxlinkage:    # use only the closest sentence to match scores
+            for target in targets:
+                a = sparsevectors.sparsecosine(targetspace[target], testfile[1])
+                if a > targetscore[target]:
+                    targetscore[target] = a
+    sortedtargets = sorted(targets, key=lambda ia: targetscore[ia], reverse=True)
+    targetvote = {}
+    for target in targets:
+        for cat in categories:
+            targetvote[cat] = 0
+    for pp in sortedtargets[:itempooldepth]:
+        targetvote[categorytable[pp]] += 1
+        logger(str(pp) + "\t" + str(categorytable[pp]) + "\t" + str(targetscore[pp]), debug)
+    sortedpredictions = sorted(categories, key=lambda ia: targetvote[ia], reverse=True)
+    prediction = sortedpredictions[0]
+    confusion.addconfusion(facittable[authornametable[authorindex]], prediction)
+logger("Done testing files.", monitor)
+confusion.evaluate()
