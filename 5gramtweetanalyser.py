@@ -89,9 +89,11 @@ logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", 
 # batch = 61881  # 31881 covers up to frequency 100; # 6630 is up frequency 500; set to zero for full set
 logger("Reading frequencies from " + wordstatsfile, monitor)
 ngramspace.importstats(wordstatsfile)
-logger("Reading vectors from " + wordspacefile, monitor)
-(n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
-logger("Imported " + n1 + " entirely new vectors and " + n2 + " previously known ones.", monitor)
+cachevectors = False
+if cachevectors:
+    logger("Reading vectors from " + wordspacefile, monitor)
+    (n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
+    logger("Imported " + n1 + " entirely new vectors and " + n2 + " previously known ones.", monitor)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
