@@ -98,15 +98,22 @@ class SemanticSpace:
 
     def importstats(self, wordstatsfile):
         with open(wordstatsfile) as savedstats:
+            i = 0
             for line in savedstats:
-                seqstats = line.rstrip().split("\t")
-                if not self.contains(seqstats[0]):
-                    self.additem(seqstats[0])
-                self.globalfrequency[seqstats[0]] = seqstats[1]
+                i += 1
+                try:
+                    seqstats = line.rstrip().split("\t")
+                    if not self.contains(seqstats[0]):
+                        self.additem(seqstats[0])
+                    self.globalfrequency[seqstats[0]] = seqstats[1]
+                except IndexError:
+                    logger("***" + str(i) + " " + line.rstrip(), debug)
 
-    def importindexvectors(self, indexvectorfile):
+    def importindexvectors(self, indexvectorfile, frequencythreshold=0):
         cannedindexvectors = open(indexvectorfile, "rb")
         goingalong = True
+        n = 0
+        m = 0
         while goingalong:
             try:
                 itemj = pickle.load(cannedindexvectors)
@@ -114,10 +121,14 @@ class SemanticSpace:
                 indexvector = itemj["indexvector"]
                 if not self.contains(item):
                     self.additem(item, indexvector)
+                    n += 1
                 else:
-                    self.indexspace[item] = indexvector
+                    if self.globalfrequency[item] > frequencythreshold:
+                        self.indexspace[item] = indexvector
+                        m += 1
             except EOFError:
                 goingalong = False
+        return (n, m)
 
 
     def importwordspace(self, wordspacefile, batch=61881):
