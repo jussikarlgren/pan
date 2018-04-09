@@ -59,11 +59,11 @@ monitor = True
 error = True
 
 testtrainfraction = 0.1
-testbatchsize = 10
-itempooldepth = 1  # keep this odd to avoid annoying ties
-authorcategorisation = False
+testbatchsize = 100
+itempooldepth = 5  # keep this odd to avoid annoying ties
+authorcategorisation = True
 gendercategorisation = False
-textcategorisation = True
+textcategorisation = False
 averagelinkage = True
 maxlinkage = False
 frequencythreshold = 100
