@@ -60,7 +60,7 @@ error = True
 
 testtrainfraction = 0.1
 testbatchsize = 100
-itempooldepth = 5  # keep this odd to avoid annoying ties
+itempooldepth = 3  # keep this odd to avoid annoying ties
 authorcategorisation = True
 gendercategorisation = False
 textcategorisation = False
@@ -156,31 +156,33 @@ logger("Done training files.", monitor)
 logger("Testing targetspace with " + str(len(targetspace)) + " categories, " + str(testvectorantal) +
        " test items and " + str(trainvectorantal) +
        " training cases. ", monitor)
-logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
-for authorindex in testvectors:
-    logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
-    targetscore = {}
-    for target in targets:
-        targetscore[target] = 0
-    for testfile in testvectors[authorindex]:
-        if averagelinkage:  # take all test sentences and sum their scores
-            for target in targets:
-                targetscore[target] += sparsevectors.sparsecosine(targetspace[target], testfile[1])
-        elif maxlinkage:    # use only the closest sentence to match scores
-            for target in targets:
-                a = sparsevectors.sparsecosine(targetspace[target], testfile[1])
-                if a > targetscore[target]:
-                    targetscore[target] = a
-    sortedtargets = sorted(targets, key=lambda ia: targetscore[ia], reverse=True)
-    targetvote = {}
-    for target in targets:
-        for cat in categories:
-            targetvote[cat] = 0
-    for pp in sortedtargets[:itempooldepth]:
-        targetvote[categorytable[pp]] += 1
-        logger(str(pp) + "\t" + str(categorytable[pp]) + "\t" + str(targetscore[pp]), debug)
-    sortedpredictions = sorted(categories, key=lambda ia: targetvote[ia], reverse=True)
-    prediction = sortedpredictions[0]
-    confusion.addconfusion(facittable[authornametable[authorindex]], prediction)
 
-confusion.evaluate()
+for itempooldepth in [1, 3, 5, 7, 9, 11]:
+    logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
+    for authorindex in testvectors:
+        logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
+        targetscore = {}
+        for target in targets:
+            targetscore[target] = 0
+        for testfile in testvectors[authorindex]:
+            if averagelinkage:  # take all test sentences and sum their scores
+                for target in targets:
+                    targetscore[target] += sparsevectors.sparsecosine(targetspace[target], testfile[1])
+            elif maxlinkage:    # use only the closest sentence to match scores
+                for target in targets:
+                    a = sparsevectors.sparsecosine(targetspace[target], testfile[1])
+                    if a > targetscore[target]:
+                        targetscore[target] = a
+        sortedtargets = sorted(targets, key=lambda ia: targetscore[ia], reverse=True)
+        targetvote = {}
+        for target in targets:
+            for cat in categories:
+                targetvote[cat] = 0
+        for pp in sortedtargets[:itempooldepth]:
+            targetvote[categorytable[pp]] += 1
+            logger(str(pp) + "\t" + str(categorytable[pp]) + "\t" + str(targetscore[pp]), debug)
+        sortedpredictions = sorted(categories, key=lambda ia: targetvote[ia], reverse=True)
+        prediction = sortedpredictions[0]
+        confusion.addconfusion(facittable[authornametable[authorindex]], prediction)
+    logger("Done testing files.", monitor)
+    confusion.evaluate()
