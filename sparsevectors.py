@@ -1,6 +1,6 @@
 import random
 import math
-import logger
+from logger import logger
 
 error = True
 
@@ -10,41 +10,45 @@ def sparseadd(onevec, othvec, weight=1, normalised=False):
         onevec = normalise(onevec)
         othvec = normalise(othvec)
     result = {}
+    ll = ""
+    k = ""
     try:
-        for l in onevec:
-            result[l] = onevec[l]
+        for ll in onevec:
+            result[ll] = onevec[ll]
         for k in othvec:
             if k in result:
                 result[k] = result[k] + othvec[k] * float(weight)
             else:
                 result[k] = othvec[k] * float(weight)
     except KeyError:
-        logger("error "+str(k)+" "+str(l), error)
+        logger("error "+str(k)+" "+str(ll), error)
         raise
     return result
 
 
 def sparsemultiply(onevec, othvec, weight=1):
     result = {}
+    ll = 0
     try:
-        for l in onevec:
-            if l in othvec:
-                result[l] = onevec[l] * othvec[l] * float(weight)
+        for ll in onevec:
+            if ll in othvec:
+                result[ll] = onevec[ll] * othvec[ll] * float(weight)
     except KeyError:
-        logger("error " + str(l), error)
+        logger("error " + str(ll), error)
     return result
 
 
 def sparsexor(onevec, othvec):
     result = {}
+    ll = ""
     try:
-        for l in range(len(onevec)):
-            if ((l in onevec) and not (l in othvec)):
-                result[l] = 1
-            if (not (l in onevec) and (l in othvec)):
-                result[l] = 1
+        for ll in range(len(onevec)):
+            if (ll in onevec) and not (ll in othvec):
+                result[ll] = 1
+            if not (ll in onevec) and (ll in othvec):
+                result[ll] = 1
     except KeyError:
-        logger("error " + str(l), error)
+        logger("error " + str(ll), error)
     return result
 
 
@@ -74,6 +78,8 @@ def sparsecosine(xvec, yvec, rounding=True, decimals=4):
     x2 = 0
     y2 = 0
     xy = 0
+    i = 0
+    j = 0
     try:
         for i in xvec:
             x2 += xvec[i] * xvec[i]
@@ -86,7 +92,7 @@ def sparsecosine(xvec, yvec, rounding=True, decimals=4):
                 xy += xvec[j] * yvec[j]
     except KeyError:
         logger("error "+str(j), error)
-    if (x2 * y2 == 0):
+    if x2 * y2 == 0:
         cos = 0
     else:
         cos = xy / (math.sqrt(x2) * math.sqrt(y2))
@@ -98,12 +104,13 @@ def sparsecosine(xvec, yvec, rounding=True, decimals=4):
 def sparselength(vec, rounding=True):
     x2 = 0
     length = 0
+    i = 0
     try:
         for i in vec:
             x2 += vec[i] * vec[i]
     except KeyError:
         logger("error "+str(i), error)
-    if (x2 > 0):
+    if x2 > 0:
         length = math.sqrt(x2)
     if rounding:
         length = round(length, 4)
@@ -144,7 +151,7 @@ def normalise(vec):
 def modify(vec, factor):
     newvector = {}
     for i in vec:
-        if (random.random() > factor):
+        if random.random() > factor:
             newvector[i] = vec[i]
         else:
             newvector[i] = float(vec[i]) * (0.5 - random.random()) * 2.0
@@ -171,7 +178,7 @@ def permute(vector, permutation):
 
 def vectorsaturation(vector):
     d = 0
-    for c in vector:
+    for c in vector:   # should be done by any([v > 1 in vector]) or something like it
         d += 1
     return d
 
