@@ -2,7 +2,7 @@ from hyperdimensionalsemanticspace import SemanticSpace
 import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
-import distutils
+from distutils.util import strtobool
 
 import random
 import os
@@ -14,19 +14,19 @@ from confusionmatrix import ConfusionMatrix
 
 properties = load_properties("5gramtweetanalyser.properties")
 window = int(properties["window"])
-debug = bool(distutils.util.strtobool(properties["debug"]))
-monitor = bool(distutils.util.strtobool(properties["monitor"]))
-error = bool(distutils.util.strtobool(properties["error"]))
+debug = bool(strtobool(properties["debug"]))
+monitor = bool(strtobool(properties["monitor"]))
+error = bool(strtobool(properties["error"]))
 testtrainfraction = float(properties["testtrainfraction"])
 testbatchsize = int(properties["testbatchsize"])
 itempooldepth = int(properties["itempooldepth"])
-authorcategorisation = bool(distutils.util.strtobool(properties["authorcategorisation"]))
-gendercategorisation = bool(distutils.util.strtobool(properties["gendercategorisation"]))
-textcategorisation = bool(distutils.util.strtobool(properties["textcategorisation"]))
-averagelinkage = bool(distutils.util.strtobool(properties["averagelinkage"]))
-maxlinkage = bool(distutils.util.strtobool(properties["maxlinkage"]))
+authorcategorisation = bool(strtobool(properties["authorcategorisation"]))
+gendercategorisation = bool(strtobool(properties["gendercategorisation"]))
+textcategorisation = bool(strtobool(properties["textcategorisation"]))
+averagelinkage = bool(strtobool(properties["averagelinkage"]))
+maxlinkage = bool(strtobool(properties["maxlinkage"]))
 wordspacefile = str(properties["wordspacefile"])
-cachevectors = bool(distutils.util.strtobool(properties["cachevectors"]))
+cachevectors = bool(strtobool(properties["cachevectors"]))
 frequencythreshold = int(properties["frequencythreshold"])
 wordstatsfile = str(properties["wordstatsfile"])
 resourcedirectory = str(properties["resourcedirectory"])
@@ -35,7 +35,7 @@ genderfacitfilename = str(properties["genderfacitfilename"])
 
 
 def tweetvector(string):
-    uvector = sparsevectors.newemptyvector(dimensionality)
+    uvector = sparsevectors.newemptyvector(ngramspace.dimensionality)
     if window > 0:
         windows = [string[ii:ii + window] for ii in range(len(string) - window + 1)]
         for sequence in windows:
@@ -103,7 +103,7 @@ if gendercategorisation:
     logger("Gender target space", monitor)
     for cat in categories:
         categorytable[cat] = cat  # redundant redundancy redundanciness
-        targetspace[cat] = sparsevectors.newemptyvector(dimensionality)
+        targetspace[cat] = sparsevectors.newemptyvector(ngramspace.dimensionality)
         targets.add(cat)
 
 logger("Started training files.", monitor)
@@ -122,7 +122,7 @@ for file in filenamelist:
     if authorcategorisation:
         targets.add(authorindex)
         targetlabel = authorindex
-        targetspace[authorindex] = sparsevectors.newemptyvector(dimensionality)
+        targetspace[authorindex] = sparsevectors.newemptyvector(ngramspace.dimensionality)
         categorytable[authorindex] = facittable[authornametable[authorindex]]
     if gendercategorisation:
         targetlabel = facittable[authornametable[authorindex]]
@@ -131,7 +131,7 @@ for file in filenamelist:
         if textcategorisation:
             targets.add(textindex)
             targetlabel = textindex
-            targetspace[textindex] = sparsevectors.newemptyvector(dimensionality)
+            targetspace[textindex] = sparsevectors.newemptyvector(ngramspace.dimensionality)
             categorytable[textindex] = facittable[authornametable[authorindex]]  # name space collision for keys
         avector = tweetvector(b.text)
         thesevectors.append((targetlabel, avector))
