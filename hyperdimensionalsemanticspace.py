@@ -8,6 +8,7 @@ error = True
 debug = False
 monitor = False
 
+
 class SemanticSpace:
     def __init__(self, dimensionality=2000, denseness=10):
         self.indexspace = {}
@@ -22,8 +23,7 @@ class SemanticSpace:
         self.denseness = denseness
         self.permutationcollection = {}
 
-
-    def addoperator(self,item):
+    def addoperator(self, item):
         self.permutationcollection[item] = sparsevectors.createpermutation(self.dimensionality)
 
     def contains(self, item):
@@ -32,19 +32,19 @@ class SemanticSpace:
         else:
             return False
 
-    def checkwordspacelist(self, words, debug=False):
+    def checkwordspacelist(self, words, loglevel=False):
         for word in words:
-            self.checkwordspace(word, debug)
+            self.checkwordspace(word, loglevel)
 
-    def checkwordspace(self, word, debug=False):
+    def checkwordspace(self, word, loglevel=False):
         self.bign += 1
         if self.contains(word):
             self.globalfrequency[word] += 1
         else:
             self.additem(word)
-            logger(str(word) + " is new and now hallucinated: " + str(self.indexspace[word]), debug)
+            logger(str(word) + " is new and now hallucinated: " + str(self.indexspace[word]), loglevel)
 
-    def observe(self,item):
+    def observe(self, item):
         self.globalfrequency[item] += 1
 
     def additem(self, item, vector="dummy"):
@@ -66,7 +66,7 @@ class SemanticSpace:
                 logger("Conflict in adding new item--- will clobber "+jsonitem["string"], error)
             item = jsonitem["string"]
             self.indexspace[item] = jsonitem["indexvector"]
-            self.globalfrequency[item] = jsonitem["frequency"]
+            self.globalfrequency[item] = int(jsonitem["frequency"])
             self.contextspace[item] = jsonitem["contextvector"]
             self.associationspace[item] = jsonitem["associationvector"]
             self.bign += int(jsonitem["frequency"])
@@ -75,11 +75,10 @@ class SemanticSpace:
 
     def frequencyweight(self, word):
         try:
-            w = math.exp(-300 * math.pi * self.globalfrequency[word] / self.bign)
+            w = math.exp(-300 * math.pi * int(self.globalfrequency[word]) / self.bign)
         except KeyError:
             w = 0.5
         return w
-
 
     def outputwordspace(self,filename):
         with open(filename, 'wb') as outfile:
@@ -106,6 +105,7 @@ class SemanticSpace:
                     if not self.contains(seqstats[0]):
                         self.additem(seqstats[0])
                     self.globalfrequency[seqstats[0]] = seqstats[1]
+                    self.bign += int(seqstats[1])
                 except IndexError:
                     logger("***" + str(i) + " " + line.rstrip(), debug)
 
@@ -128,8 +128,7 @@ class SemanticSpace:
                         m += 1
             except EOFError:
                 goingalong = False
-        return (n, m)
-
+        return n, m
 
     def importwordspace(self, wordspacefile, batch=61881):
             i = 0
@@ -148,7 +147,6 @@ class SemanticSpace:
             if self.globalfrequency[item] <= threshold:
                 self.removeitem(item)
 
-
     def removeitem(self, item):
         if self.contains(item):
             del self.indexspace[item]
@@ -157,10 +155,8 @@ class SemanticSpace:
             del self.globalfrequency[item]
             self.bign -= 1
 
-
     def newemptyvector(self):
         return sparsevectors.newemptyvector(self.dimensionality)
-
 
     def similarity(self, item, anotheritem):
         #  should be based on contextspace
