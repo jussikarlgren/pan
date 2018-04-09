@@ -44,6 +44,8 @@ def sparsexor(onevec, othvec):
         logger("error "+str(k)+" "+str(l),error)
     return result
 
+def newrandomvector(n, denseness):
+    return {}
 
 def newrandomvector(n, denseness):
     vec = {}
