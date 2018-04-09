@@ -48,7 +48,7 @@ def sparsexor(onevec, othvec):
     return result
 
 
-def newrandomvector(n):
+def newemptyvector(n):
     return {}
 
 
@@ -56,7 +56,7 @@ def newrandomvector(n, denseness):
     vec = {}
     if denseness % 2 != 0:
         denseness += 1
-    if (denseness > 0):  # no need to be careful about this, right? and k % 2 == 0):
+    if denseness > 0:  # no need to be careful about this, right? and k % 2 == 0):
         nonzeros = random.sample(list(range(n)), denseness)
         negatives = random.sample(nonzeros, denseness // 2)
         for i in nonzeros:
@@ -90,7 +90,7 @@ def sparsecosine(xvec, yvec, rounding=True, decimals=4):
         cos = 0
     else:
         cos = xy / (math.sqrt(x2) * math.sqrt(y2))
-    if (rounding):
+    if rounding:
         cos = round(cos, decimals)
     return cos
 
@@ -105,7 +105,7 @@ def sparselength(vec, rounding=True):
         logger("error "+str(i), error)
     if (x2 > 0):
         length = math.sqrt(x2)
-    if (rounding):
+    if rounding:
         length = round(length, 4)
     return length
 
@@ -133,7 +133,7 @@ def sparsesum(vec):
 def normalise(vec):
     newvector = {}
     vlen = sparselength(vec, False)
-    if (vlen > 0):
+    if vlen > 0:
         for i in vec:
             newvector[i] = vec[i] / math.sqrt(vlen * vlen)
     else:
