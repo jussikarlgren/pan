@@ -7,10 +7,9 @@ import random
 import os
 import re
 
-import sparsevectorsps as sparsevectors
+import sparsevectors
 from logger import logger
 from confusionmatrix import ConfusionMatrix
-
 
 
 def tweetvector(string):
@@ -92,7 +91,7 @@ logger("Reading frequencies from " + wordstatsfile, monitor)
 ngramspace.importstats(wordstatsfile)
 logger("Reading vectors from " + wordspacefile, monitor)
 (n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
-logger("Imported " + n + " entirely new vectors and " + m + " previously known ones.", monitor)
+logger("Imported " + n1 + " entirely new vectors and " + n2 + " previously known ones.", monitor)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
