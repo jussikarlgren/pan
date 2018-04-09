@@ -1,34 +1,20 @@
 from hyperdimensionalsemanticspace import SemanticSpace
 import json
 import xml.etree.ElementTree
+from stringsequencespace import StringSequenceSpace
 
 import random
 import os
 import re
 
-import sparsevectors
+import sparsevectorsps as sparsevectors
 from logger import logger
 from confusionmatrix import ConfusionMatrix
 
 
-def trainglobal(string):
-    if window > 0:
-        windows = [string[ii:ii + window] for ii in range(len(string) - window + 1)]
-        for sequence in windows:
-            if ngramspace.contains(sequence):
-                ngramspace.observe(sequence)
-            else:
-                thisvector = {}
-                for character in sequence:
-                    ngramspace.checkwordspace(character)
-                    thisvector = sparsevectors.sparseadd(
-                        sparsevectors.permute(thisvector, ngramspace.permutationcollection["sequence"]),
-                        ngramspace.indexspace[character])
-                ngramspace.additem(sequence, thisvector)
-
 
 def tweetvector(string):
-    uvector = {}
+    uvector = sparsevectors.newemptyvector(dimensionality)
     if window > 0:
         windows = [string[ii:ii + window] for ii in range(len(string) - window + 1)]
         for sequence in windows:
@@ -36,12 +22,7 @@ def tweetvector(string):
                 thisvector = ngramspace.indexspace[sequence]
                 ngramspace.observe(sequence)
             else:
-                thisvector = {}
-                for character in sequence:
-                    ngramspace.checkwordspace(character)
-                    thisvector = sparsevectors.sparseadd(
-                        sparsevectors.permute(thisvector, ngramspace.permutationcollection["sequence"]),
-                        ngramspace.indexspace[character])
+                thisvector = stringspace.makevector(sequence)
                 ngramspace.additem(sequence, thisvector)
             factor = ngramspace.frequencyweight(sequence)
             uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
@@ -70,13 +51,16 @@ ngramspace = SemanticSpace()
 ngramspace.addoperator("sequence")
 confusion = ConfusionMatrix()
 categorytable = {}
+dimensionality = 2000
+
+stringspace = StringSequenceSpace(ngramspace.dimensionality, ngramspace.denseness)
 
 debug = False
 monitor = True
 error = True
 
 testtrainfraction = 0.1
-testbatchsize = 100
+testbatchsize = 10
 itempooldepth = 1  # keep this odd to avoid annoying ties
 authorcategorisation = False
 gendercategorisation = False
@@ -84,7 +68,8 @@ textcategorisation = True
 averagelinkage = True
 maxlinkage = False
 
-wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.wordspace"
+wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordspace"
+wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.wordstats"
 resourcedirectory = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/text/"
 genderfacitfilename = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/en.txt"
 filenamepattern = ".+\.xml"
@@ -99,27 +84,13 @@ readgender(genderfacitfilename)
 
 random.shuffle(filenamelist)
 logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", monitor)
-train = False
-if train:
-    for file in filenamelist:
-        i += 1
-        logger("Computing ngram frequency-based weights with " + str(i) + " files " + str(file), debug)
-        e = xml.etree.ElementTree.parse(file).getroot()
-        for b in e.iter("document"):
-            trainglobal(b.text)
-    logger("Writing weights to " + wordspacefile, monitor)
-    ngramspace.outputwordspace(wordspacefile)
-else:
-    batch = 61881  # 31881 covers up to frequency 100; # 6630 is up frequency 500; set to zero for full set
-    i = 0
-    logger("Reading weights from " + wordspacefile, monitor)
-    with open(wordspacefile) as savedwordspace:
-        for line in savedwordspace:
-            i += 1
-            ngramspace.addsaveditem(json.loads(line))
-            if batch > 0 and i > batch:
-                logger("Skipped rest of weights after " + str(i) + " items.", monitor)
-                break
+
+
+# batch = 61881  # 31881 covers up to frequency 100; # 6630 is up frequency 500; set to zero for full set
+logger("Reading vectors from " + wordspacefile, monitor)
+ngramspace.importindexvectors(wordspacefile)
+logger("Reading frequencies from " + wordstatsfile, monitor)
+ngramspace.importindexvectors(wordstatsfile)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
@@ -134,7 +105,7 @@ if gendercategorisation:
     logger("Gender target space", monitor)
     for cat in categories:
         categorytable[cat] = cat  # redundant redundancy redundanciness
-        targetspace[cat] = {}
+        targetspace[cat] = sparsevectors.newemptyvector(dimensionality)
         targets.add(cat)
 
 logger("Started training files.", monitor)
@@ -154,7 +125,7 @@ for file in filenamelist:
     if authorcategorisation:
         targets.add(authorindex)
         targetlabel = authorindex
-        targetspace[authorindex] = {}
+        targetspace[authorindex] = sparsevectors.newemptyvector(dimensionality)
         categorytable[authorindex] = facittable[authornametable[authorindex]]
     if gendercategorisation:
         targetlabel = facittable[authornametable[authorindex]]
@@ -163,7 +134,7 @@ for file in filenamelist:
         if textcategorisation:
             targets.add(textindex)
             targetlabel = textindex
-            targetspace[textindex] = {}
+            targetspace[textindex] = sparsevectors.newemptyvector(dimensionality)
             categorytable[textindex] = facittable[authornametable[authorindex]]  # name space collision for keys
         avector = tweetvector(b.text)
         thesevectors.append((targetlabel, avector))

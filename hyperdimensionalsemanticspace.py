@@ -1,7 +1,8 @@
-import sparsevectors
+import sparsevectorsps as sparsevectors
 import math
 from logger import logger
 import json
+import pickle
 
 error = True
 debug = False
@@ -33,7 +34,7 @@ class SemanticSpace:
 
     def checkwordspacelist(self, words, debug=False):
         for word in words:
-            self.checkwordspace(word,debug)
+            self.checkwordspace(word, debug)
 
     def checkwordspace(self, word, debug=False):
         self.bign += 1
@@ -41,29 +42,28 @@ class SemanticSpace:
             self.globalfrequency[word] += 1
         else:
             self.additem(word)
-            logger(str(word) + " is new and now hallucinated.", debug)
+            logger(str(word) + " is new and now hallucinated: " + str(self.indexspace[word]), debug)
 
     def observe(self,item):
         self.globalfrequency[item] += 1
 
-    def additem(self, item, vector=None):
+    def additem(self, item, vector="dummy"):
+        if vector is "dummy":
+            vector = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
         if not self.contains(item):
-            if vector:
-                self.indexspace[item] = vector
-            else:
-                self.indexspace[item] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
+            self.indexspace[item] = vector
             self.globalfrequency[item] = 1
-            self.contextspace[item] = {}
-            self.associationspace[item] = {}
-            self.textspace[item] = {}
-            self.utterancespace[item] = {}
-            self.authorspace[item] = {}
+            self.contextspace[item] = sparsevectors.newemptyvector(self.dimensionality)
+            self.associationspace[item] = sparsevectors.newemptyvector(self.dimensionality)
+#            self.textspace[item] = sparsevectors.newemptyvector(self.dimensionality)
+#            self.utterancespace[item] = sparsevectors.newemptyvector(self.dimensionality)
+#            self.authorspace[item] = sparsevectors.newemptyvector(self.dimensionality)
             self.bign += 1
 
     def addsaveditem(self, jsonitem):
         try:
             if self.contains(jsonitem["string"]):
-                logger("Conflict in adding new item--- will clobber "+string, error)
+                logger("Conflict in adding new item--- will clobber "+jsonitem["string"], error)
             item = jsonitem["string"]
             self.indexspace[item] = jsonitem["indexvector"]
             self.globalfrequency[item] = jsonitem["frequency"]
@@ -82,7 +82,7 @@ class SemanticSpace:
 
 
     def outputwordspace(self,filename):
-        with open(filename, 'w') as outfile:
+        with open(filename, 'wb') as outfile:
             for item in self.indexspace:
                 try:
                     itemj = {}
@@ -91,8 +91,67 @@ class SemanticSpace:
                     itemj["contextvector"] = self.contextspace[item]
                     itemj["associationvector"] = self.associationspace[item]
                     itemj["frequency"] = self.globalfrequency[item]
-                    outfile.write(json.dumps(itemj)+"\n")
+                    outfile.write(pickle.dumps(itemj, protocol=0))
+ #                   outfile.write("\n")
                 except TypeError:
                     logger("Could not write >>"+item+"<<", error)
 
+    def importstats(self, wordstatsfile):
+        with open(wordstatsfile) as savedstats:
+            for line in savedstats:
+                seqstats = line.rstrip().split("\t")
+                if not self.contains(seqstats[0]):
+                    self.additem(seqstats[0])
+                self.globalfrequency[seqstats[0]] = seqstats[1]
+
+    def importindexvectors(self, indexvectorfile):
+        cannedindexvectors = open(indexvectorfile, "rb")
+        goingalong = True
+        while goingalong:
+            try:
+                itemj = pickle.load(cannedindexvectors)
+                item = itemj["string"]
+                indexvector = itemj["indexvector"]
+                if not self.contains(item):
+                    self.additem(item, indexvector)
+                else:
+                    self.indexspace[item] = indexvector
+            except EOFError:
+                goingalong = False
+
+
+    def importwordspace(self, wordspacefile, batch=61881):
+            i = 0
+            logger("Reading weights from " + wordspacefile, monitor)
+            with open(wordspacefile) as savedwordspace:
+                for line in savedwordspace:
+                    i += 1
+                    self.addsaveditem(pickle.loads(line))
+                    if batch > 0 and i > batch:
+                        logger("Skipped rest of weights after " + str(i) + " items.", monitor)
+                        break
+
+    def reducewordspace(self, threshold=1):
+        items = list(self.indexspace.keys())
+        for item in items:
+            if self.globalfrequency[item] <= threshold:
+                self.removeitem(item)
+
+
+    def removeitem(self, item):
+        if self.contains(item):
+            del self.indexspace[item]
+            del self.contextspace[item]
+            del self.associationspace[item]
+            del self.globalfrequency[item]
+            self.bign -= 1
+
+
+    def newemptyvector(self):
+        return sparsevectors.newemptyvector(self.dimensionality)
+
+
+    def similarity(self, item, anotheritem):
+        #  should be based on contextspace
+        return sparsevectors.sparsecosine(self.indexspace[item], self.indexspace[anotheritem])
 

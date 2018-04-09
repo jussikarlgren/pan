@@ -1,6 +1,6 @@
 import random
 import math
-
+import logger
 
 def sparseadd(onevec, othvec, weight=1, normalised=False):
     if normalised:
@@ -110,7 +110,7 @@ def comb(vec, k, dim):
     bot = sorted_items[:n]
     top = sorted_items[-n:]
     for l in bot:
-        newvector[l[0]] = l[1]
+        newvector[l[0]] = 0
     for l in top:
         newvector[l[0]] = l[1]
     return newvector
@@ -153,11 +153,12 @@ def permute(vector, permutation):
     newvector = {}
     try:
         for i in range(len(permutation)):
-            if str(i) in vector:
-                newvector[str(permutation[i])] = vector[str(i)]
+            if i in vector:  # why was this str(i) for a while? i forget.
+                newvector[permutation[i]] = vector[i]
+                # newvector[str(permutation[i])] = vector[str(i)]
     except KeyError:
         newvector = vector
-        logger("no permutation done, something wrong",error)
+        logger("no permutation done, something wrong", error)
     return newvector
 
 
@@ -166,3 +167,8 @@ def vectorsaturation(vector):
     for c in vector:
         d += 1
     return d
+
+
+def sparseshift(vector, dimensionality, step=1):
+    p = list(range(0, dimensionality))
+    return permute(vector, p[step:] + p[:step])
