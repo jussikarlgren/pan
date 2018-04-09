@@ -2,7 +2,7 @@ from hyperdimensionalsemanticspace import SemanticSpace
 import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
-
+import distutils
 
 import random
 import os
@@ -14,19 +14,19 @@ from confusionmatrix import ConfusionMatrix
 
 properties = load_properties("5gramtweetanalyser.properties")
 window = int(properties["window"])
-debug = bool(properties["debug"])
-monitor = bool(properties["monitor"])
-error = bool(properties["error"])
+debug = bool(distutils.util.strtobool(properties["debug"]))
+monitor = bool(distutils.util.strtobool(properties["monitor"]))
+error = bool(distutils.util.strtobool(properties["error"]))
 testtrainfraction = float(properties["testtrainfraction"])
 testbatchsize = int(properties["testbatchsize"])
 itempooldepth = int(properties["itempooldepth"])
-authorcategorisation = bool(properties["authorcategorisation"])
-gendercategorisation = bool(properties["gendercategorisation"])
-textcategorisation = bool(properties["textcategorisation"])
-averagelinkage = bool(properties["averagelinkage"])
-maxlinkage = bool(properties["maxlinkage"])
+authorcategorisation = bool(distutils.util.strtobool(properties["authorcategorisation"]))
+gendercategorisation = bool(distutils.util.strtobool(properties["gendercategorisation"]))
+textcategorisation = bool(distutils.util.strtobool(properties["textcategorisation"]))
+averagelinkage = bool(distutils.util.strtobool(properties["averagelinkage"]))
+maxlinkage = bool(distutils.util.strtobool(properties["maxlinkage"]))
 wordspacefile = str(properties["wordspacefile"])
-cachevectors = bool(properties["cachevectors"])
+cachevectors = bool(distutils.util.strtobool(properties["cachevectors"]))
 frequencythreshold = int(properties["frequencythreshold"])
 wordstatsfile = str(properties["wordstatsfile"])
 resourcedirectory = str(properties["resourcedirectory"])
@@ -88,7 +88,7 @@ ngramspace.importstats(wordstatsfile)
 if cachevectors:
     logger("Reading vectors from " + wordspacefile, monitor)
     (n1, n2) = ngramspace.importindexvectors(wordspacefile, frequencythreshold)
-    logger("Imported " + n1 + " entirely new vectors and " + n2 + " previously known ones.", monitor)
+    logger("Imported " + str(n1) + " entirely new vectors and " + str(n2) + " previously known ones.", monitor)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
