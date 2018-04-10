@@ -31,8 +31,8 @@ class StringSequenceSpace:
             windows = [string[ii:ii + self.window] for ii in range(len(string) - self.window + 1)]
             for sequence in windows:
                 thisvector = self.makevector(sequence)
-            factor = self.frequencyweight(sequence)
-            uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
+                factor = self.frequencyweight(sequence)
+                uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
         return uvector
 
     def savecharacterspace(self, filename):
