@@ -1,9 +1,7 @@
 import random
 import sparsevectors
-
-error = True
-debug = False
-monitor = False
+import pickle
+import math
 
 class StringSequenceSpace:
     def __init__(self, dimensionality=2000, denseness=10, window=5):
@@ -11,6 +9,38 @@ class StringSequenceSpace:
         self.dimensionality = dimensionality
         self.denseness = denseness
         self.window = window
+        self.globalfrequency = {}
+        self.bign = 0
+
+    def importstats(self, wordstatsfile):
+        with open(wordstatsfile) as savedstats:
+            i = 0
+            for line in savedstats:
+                i += 1
+                seqstats = line.rstrip().split("\t")
+                try:
+                    if not seqstats[0] in self.globalfrequency:
+                        self.globalfrequency[seqstats[0]] = int(seqstats[1])
+                    self.bign += int(seqstats[1])
+                except IndexError:
+                    pass
+
+    def textvector(self, string):
+        uvector = sparsevectors.newemptyvector(self.dimensionality)
+        if self.window > 0:
+            windows = [string[ii:ii + self.window] for ii in range(len(string) - self.window + 1)]
+            for sequence in windows:
+                thisvector = self.makevector(sequence)
+            factor = self.frequencyweight(sequence)
+            uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
+        return uvector
+
+    def savecharacterspace(self, filename):
+        with open(filename, "wb") as outfile:
+            pickle.dump(self.indexspace, outfile)
+
+    def importcharacterspace(self, indexvectorfile):
+        self.indexspace = pickle.load(open(indexvectorfile, "rb"))
 
     def makevector(self, string):
         stringvector = {} #  np.array([0] * self.dimensionality)
@@ -30,3 +60,9 @@ class StringSequenceSpace:
             # np.append(stringvector[1:], stringvector[0]) + self.indexspace[character]
         return stringvector  # lil_matrix(stringvector.reshape(self.dimensionality, -1))
 
+    def frequencyweight(self, word):
+        try:
+            w = math.exp(-300 * math.pi * int(self.globalfrequency[word]) / self.bign)
+        except KeyError:
+            w = 0.5
+        return w
