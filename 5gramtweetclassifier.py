@@ -62,46 +62,48 @@ for item in testvectors:
     for otheritem in items:
         neighbours[item][otheritem] = itemspace.similarity(item, otheritem)
 logger("Done calculating neighbours", monitor)
-print("\t", end="\t")
-for item in items:
-    print(item, end="\t")
-print("\n")
-for item in testvectors:
-    print(item, end="\t")
-    for otheritem in items:
-        print(neighbours[item][otheritem], end="\t")
+
+relativeneighbourhood = False
+if relativeneighbourhood:
+    print("\t", end="\t")
+    for item in items:
+        print(item, end="\t")
     print("\n")
-for item in items:
-    print(str(item), itemspace.name[item])
+    for item in testvectors:
+        print(item, end="\t")
+        for otheritem in items:
+            print(neighbours[item][otheritem], end="\t")
+        print("\n")
+    for item in items:
+        print(str(item), itemspace.name[item])
 
 
-if True:
-    for itempooldepth in [1, 3, 5, 7, 9, 11]:
-        logger("Pool depth " + str(itempooldepth), monitor)
-        for averagelinkage in [True, False]:
-            votelinkage = not averagelinkage
-            if averagelinkage:
-                logger("Averagelinkage", monitor)
-            if votelinkage:
-                logger("Votelinkage", monitor)
-            confusion = ConfusionMatrix()
-            targetscore = {}
-            for item in testvectors:
-                sortedneighbours = sorted(neighbours[item], key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
-                for target in categories:
-                    targetscore[target] = 0
-                if averagelinkage:  # take all test neighbours and sum their scores
-                    for neighbour in sortedneighbours:
-                        targetscore[itemspace.category[neighbour]] += neighbours[item][neighbour]
-                elif maxlinkage:    # use only the closest neighbour's score
-                    for neighbour in sortedneighbours:
-                        if targetscore[itemspace.category[neighbour]] < neighbours[item][neighbour]:
-                            targetscore[itemspace.category[neighbour]] = neighbours[item][neighbour]
-                elif votelinkage:
-                    for neighbour in sortedneighbours:
-                        targetscore[itemspace.category[neighbour]] += 1
-                sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
-                prediction = sortedpredictions[0]
-                confusion.addconfusion(itemspace.category[item], prediction)
-            confusion.evaluate()
-    logger("Done testing files.", monitor)
+for itempooldepth in [1, 3, 5, 7, 9, 11]:
+    logger("Pool depth " + str(itempooldepth), monitor)
+    for averagelinkage in [True, False]:
+        votelinkage = not averagelinkage
+        if averagelinkage:
+            logger("Averagelinkage", monitor)
+        if votelinkage:
+            logger("Votelinkage", monitor)
+        confusion = ConfusionMatrix()
+        targetscore = {}
+        for item in testvectors:
+            sortedneighbours = sorted(neighbours[item], key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
+            for target in categories:
+                targetscore[target] = 0
+            if averagelinkage:  # take all test neighbours and sum their scores
+                for neighbour in sortedneighbours:
+                    targetscore[itemspace.category[neighbour]] += neighbours[item][neighbour]
+            elif maxlinkage:    # use only the closest neighbour's score
+                for neighbour in sortedneighbours:
+                    if targetscore[itemspace.category[neighbour]] < neighbours[item][neighbour]:
+                        targetscore[itemspace.category[neighbour]] = neighbours[item][neighbour]
+            elif votelinkage:
+                for neighbour in sortedneighbours:
+                    targetscore[itemspace.category[neighbour]] += 1
+            sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
+            prediction = sortedpredictions[0]
+            confusion.addconfusion(itemspace.category[item], prediction)
+        confusion.evaluate()
+logger("Done testing files.", monitor)
