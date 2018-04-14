@@ -12,7 +12,7 @@ import sparsevectors
 from logger import logger
 from confusionmatrix import ConfusionMatrix
 
-properties = load_properties("5gramtweetanalyser.properties")
+properties = load_properties("factory.properties")
 dimensionality = int(properties["dimensionality"])
 denseness = int(properties["denseness"])
 window = int(properties["window"])
@@ -28,8 +28,8 @@ wordstatsfile = str(properties["wordstatsfile"])
 resourcedirectory = str(properties["resourcedirectory"])
 filenamepattern = str(properties["filenamepattern"])
 genderfacitfilename = str(properties["genderfacitfilename"])
-charactervectorspacefilename = str(properties["charactervectorspacefilename"]) + ".test"
-categorymodelfilename = str(properties["categorymodelfilename"]) + ".test"
+charactervectorspacefilename = str(properties["charactervectorspacefilename"])
+categorymodelfilename = str(properties["categorymodelfilename"])
 
 
 def readgender(genderfile):
@@ -68,7 +68,7 @@ stringspace.importstats(wordstatsfile)
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
     filenamelist = filenamelist[:testbatchsize]
-logger("Going on with a file list of " + str(testbatchsize) + " items.", monitor)
+logger("Going on with a file list of " + str(len(filenamelist)) + " items.", monitor)
 
 if textcategorisation:
     logger("Text target space", monitor)
