@@ -1,7 +1,6 @@
 import sparsevectors
 import math
 from logger import logger
-import json
 import pickle
 
 error = True
@@ -22,6 +21,11 @@ class SemanticSpace:
         self.dimensionality = dimensionality
         self.denseness = denseness
         self.permutationcollection = {}
+        self.category = {}
+        self.name = {}
+
+    def items(self):
+        return self.indexspace.keys()
 
     def addoperator(self, item):
         self.permutationcollection[item] = sparsevectors.createpermutation(self.dimensionality)
@@ -75,12 +79,12 @@ class SemanticSpace:
 
     def frequencyweight(self, word):
         try:
-            w = math.exp(-300 * math.pi * int(self.globalfrequency[word]) / self.bign)
+            w = 1 - math.atan(self.globalfrequency[word] - 1) / (0.5 * math.pi)  # ranges between 1 and 1/3
         except KeyError:
             w = 0.5
         return w
 
-    def outputwordspace(self,filename):
+    def outputwordspace(self, filename):
         with open(filename, 'wb') as outfile:
             for item in self.indexspace:
                 try:
@@ -90,10 +94,9 @@ class SemanticSpace:
                     itemj["contextvector"] = self.contextspace[item]
                     itemj["associationvector"] = self.associationspace[item]
                     itemj["frequency"] = self.globalfrequency[item]
-                    outfile.write(pickle.dumps(itemj, protocol=0))
- #                   outfile.write("\n")
+                    pickle.dump(itemj, outfile)
                 except TypeError:
-                    logger("Could not write >>"+item+"<<", error)
+                    logger("Could not write >>" + item + "<<", error)
 
     def importstats(self, wordstatsfile):
         with open(wordstatsfile) as savedstats:
@@ -129,17 +132,6 @@ class SemanticSpace:
             except EOFError:
                 goingalong = False
         return n, m
-
-    def importwordspace(self, wordspacefile, batch=61881):
-            i = 0
-            logger("Reading weights from " + wordspacefile, monitor)
-            with open(wordspacefile) as savedwordspace:
-                for line in savedwordspace:
-                    i += 1
-                    self.addsaveditem(pickle.loads(line))
-                    if batch > 0 and i > batch:
-                        logger("Skipped rest of weights after " + str(i) + " items.", monitor)
-                        break
 
     def reducewordspace(self, threshold=1):
         items = list(self.indexspace.keys())
