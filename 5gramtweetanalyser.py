@@ -3,7 +3,7 @@ import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
 from distutils.util import strtobool
-
+import pickle
 import random
 import os
 import re
@@ -32,7 +32,9 @@ wordstatsfile = str(properties["wordstatsfile"])
 resourcedirectory = str(properties["resourcedirectory"])
 filenamepattern = str(properties["filenamepattern"])
 genderfacitfilename = str(properties["genderfacitfilename"])
-
+outputmodel = bool(strtobool(properties["outputmodel"]))
+charactervectorspacefilename = str(properties["charactervectorspacefilename"])
+categorymodelfilename = str(properties["categorymodelfilename"])
 
 def tweetvector(string):
     uvector = sparsevectors.newemptyvector(ngramspace.dimensionality)
@@ -147,11 +149,20 @@ for file in filenamelist:
             targetspace[tv[0]] = sparsevectors.sparseadd(targetspace[tv[0]], tv[1])
 logger("Done training files.", monitor)
 
+if outputmodel:
+    # output character patterns to be able to generate new tweetvectors for separate testing on trained data
+    stringspace.savecharacterspace(charactervectorspacefilename)
+    # output model here with info about the category of each model item
+    with open(categorymodelfilename, "wb") as outfile:
+        pickle.dump(targetspace, outfile)
+
+
 logger("Testing targetspace with " + str(len(targetspace)) + " categories, " + str(testvectorantal) +
        " test items and " + str(trainvectorantal) +
        " training cases. ", monitor)
 
 confusion = ConfusionMatrix()
+averagerankofauthorhit = 0
 logger("Average linkage: " + str(averagelinkage) + " pool depth " + str(itempooldepth), monitor)
 for authorindex in testvectors:
     logger(str(authorindex) + "\t" + str(facittable[authornametable[authorindex]]) + "===============", debug)
@@ -168,6 +179,9 @@ for authorindex in testvectors:
                 if a > targetscore[target]:
                     targetscore[target] = a
     sortedtargets = sorted(targets, key=lambda ia: targetscore[ia], reverse=True)
+    for rank in range(len(sortedtargets)):
+        if sortedtargets[rank] == authorindex:
+            averagerankofauthorhit += rank + 1
     targetvote = {}
     for target in targets:
         for cat in categories:
@@ -180,3 +194,5 @@ for authorindex in testvectors:
     confusion.addconfusion(facittable[authornametable[authorindex]], prediction)
 logger("Done testing files.", monitor)
 confusion.evaluate()
+if len(testvectors) > 0:
+    print(averagerankofauthorhit, len(testvectors), averagerankofauthorhit / len(testvectors), sep="\t")
