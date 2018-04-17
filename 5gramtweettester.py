@@ -6,6 +6,10 @@ import random
 from logger import logger
 from confusionmatrix import ConfusionMatrix
 
+"""
+This code reads precomputed vectors and does cross evaluation on them. Properties in separate file.
+"""
+
 properties = load_properties("5gramtweetxval.properties")
 debug = bool(strtobool(properties["debug"]))
 monitor = bool(strtobool(properties["monitor"]))
@@ -112,7 +116,10 @@ for iterations in range(numberofiterations):
             confusion.addconfusion(itemspace.category[item], prediction)
         confusion.evaluate()
         for c in categories:
-            result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
+            try:
+                result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
+            except KeyError:
+                result[c][itempooldepth] = 0
     logger("Done testing.", monitor)
     for c in categories:
         print(c, result[c], sep="\t")
