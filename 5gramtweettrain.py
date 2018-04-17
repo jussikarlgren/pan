@@ -1,4 +1,3 @@
-from hyperdimensionalsemanticspace import SemanticSpace
 import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
@@ -10,7 +9,6 @@ import re
 
 import sparsevectors
 from logger import logger
-from confusionmatrix import ConfusionMatrix
 
 properties = load_properties("factory.properties")
 dimensionality = int(properties["dimensionality"])
@@ -55,7 +53,6 @@ for filename in os.listdir(resourcedirectory):
         filenamelist.append(os.path.join(resourcedirectory, filename))
 
 
-
 logger("Reading categories from facit file ", monitor)
 readgender(genderfacitfilename)
 
@@ -83,13 +80,14 @@ if gendercategorisation:
 logger("Started training files.", monitor)
 authorindex = 0
 textindex = 0
+n = 0
 with open(categorymodelfilename, "wb") as outfile:
     for file in filenamelist:
         authorname = file.split(".")[0].split("/")[-1]
         authorindex += 1
         logger("Starting training " + str(authorindex) + " " + file, monitor)
+        workingvector = sparsevectors.newemptyvector(dimensionality)
         if authorcategorisation:
-            workingvector = sparsevectors.newemptyvector(dimensionality)
             modelitem = {}
             modelitem["textindex"] = 0
             modelitem["authorindex"] = authorindex
@@ -107,6 +105,7 @@ with open(categorymodelfilename, "wb") as outfile:
                 modelitem["category"] = facittable[authorname]
                 modelitem["vector"] = avector
                 pickle.dump(modelitem, outfile)
+                n += 1
             if authorcategorisation:
                 workingvector = sparsevectors.sparseadd(workingvector, avector)
             if gendercategorisation:
@@ -115,6 +114,7 @@ with open(categorymodelfilename, "wb") as outfile:
         if authorcategorisation:
             modelitem["vector"] = workingvector
             pickle.dump(modelitem, outfile)
+            n += 1
     if gendercategorisation:
         for cat in categories:
             modelitem = {}
@@ -124,7 +124,8 @@ with open(categorymodelfilename, "wb") as outfile:
             modelitem["authorname"] = "legion"
             modelitem["vector"] = catitem[cat]
             pickle.dump(modelitem, outfile)
-logger("Done training files resulting in " + str(len(targetspace)) + " vectors.", monitor)
+            n += 1
+logger("Done training files resulting in " + str(n) + " vectors.", monitor)
 # output character patterns to be able to generate new tweetvectors for separate testing on trained data
 logger("Saving character setup.", monitor)
 stringspace.savecharacterspace(charactervectorspacefilename)
