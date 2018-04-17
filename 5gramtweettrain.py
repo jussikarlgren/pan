@@ -28,7 +28,7 @@ filenamepattern = str(properties["filenamepattern"])
 genderfacitfilename = str(properties["genderfacitfilename"])
 charactervectorspacefilename = str(properties["charactervectorspacefilename"])
 categorymodelfilename = str(properties["categorymodelfilename"])
-
+frequencyweighting = bool(strtobool(properties["frequencyweighting"]))
 
 def readgender(genderfile):
     global facittable
@@ -95,7 +95,7 @@ with open(categorymodelfilename, "wb") as outfile:
             modelitem["category"] = facittable[authorname]
         e = xml.etree.ElementTree.parse(file).getroot()
         for b in e.iter("document"):
-            avector = stringspace.textvector(b.text)
+            avector = stringspace.textvector(b.text, frequencyweighting)
             if textcategorisation:
                 textindex += 1
                 modelitem = {}
