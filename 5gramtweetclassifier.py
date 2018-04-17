@@ -9,6 +9,11 @@ from confusionmatrix import ConfusionMatrix
 import os
 import re
 import xml.etree.ElementTree
+import squintinglinguist
+
+"""
+This program takes a PAN file and runs it against precomputed vectors.
+"""
 
 
 properties = load_properties("5gramtweetnewtester.properties")
@@ -17,7 +22,6 @@ denseness = int(properties["denseness"])
 debug = bool(strtobool(properties["debug"]))
 monitor = bool(strtobool(properties["monitor"]))
 error = bool(strtobool(properties["error"]))
-testtrainfraction = float(properties["testtrainfraction"])
 testbatchsize = int(properties["testbatchsize"])
 itempooldepth = int(properties["itempooldepth"])
 averagelinkage = bool(strtobool(properties["averagelinkage"]))
@@ -28,6 +32,7 @@ charactervectorspacefilename = str(properties["charactervectorspacefilename"])
 numberofiterations = int(properties["numberofiterations"])
 resourcedirectory = str(properties["resourcedirectory"])
 filenamepattern = str(properties["filenamepattern"])
+frequencyweighting = bool(strtobool(properties["frequencyweighting"]))
 
 
 stringspace = stringsequencespace.StringSequenceSpace()
@@ -56,7 +61,8 @@ for file in filenamelist:
 #    modelitem["authorname"] = authorname
     e = xml.etree.ElementTree.parse(file).getroot()
     for b in e.iter("document"):
-        avector = stringspace.textvector(b.text)
+        newtext = squintinglinguist.generalise(b.text)
+        avector = stringspace.textvector(newtext, frequencyweighting)
         workingvector = sparsevectors.sparseadd(workingvector, avector)
 #    modelitem["vector"] = workingvector
     nn += 1
