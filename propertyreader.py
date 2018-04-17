@@ -11,6 +11,9 @@
 def load_properties(filepath, sep='=', comment_char='#'):
     """
     Read the file passed as parameter as a properties file.
+
+    To do: create class of properties read from file, allow for default values getprop(name,default), parse
+    values by type (int(), bool() etc), allow for missing values, parse name of values to create property name.
     """
     props = {}
     with open(filepath, "rt") as f:
