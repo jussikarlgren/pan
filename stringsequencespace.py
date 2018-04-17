@@ -25,13 +25,16 @@ class StringSequenceSpace:
                 except IndexError:
                     pass
 
-    def textvector(self, string):
+    def textvector(self, string, frequencyweighting=True):
         uvector = sparsevectors.newemptyvector(self.dimensionality)
         if self.window > 0:
             windows = [string[ii:ii + self.window] for ii in range(len(string) - self.window + 1)]
             for sequence in windows:
                 thisvector = self.makevector(sequence)
-                factor = self.frequencyweight(sequence)
+                if frequencyweighting:
+                    factor = self.frequencyweight(sequence)
+                else:
+                    factor = 1
                 uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
         return uvector
 
