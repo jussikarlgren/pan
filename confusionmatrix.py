@@ -67,7 +67,7 @@ class ConfusionMatrix:
                 print(glitterweight[glitterlabel], "\t", end="")
         if hsum > 0:
             self.macro = self.macro / len(self.gold)
-        self.micro = correct / hsum
+            self.micro = correct / hsum
         print("|", hsum, vsum, self.macro, self.micro, sep="\t")
         print("\n")
         return self.macro
