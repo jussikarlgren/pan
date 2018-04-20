@@ -55,7 +55,6 @@ def sparsexor(onevec, othvec):
 def newemptyvector(n):
     return {}
 
-
 def newrandomvector(n, denseness):
     vec = {}
     if denseness % 2 != 0:
@@ -64,9 +63,9 @@ def newrandomvector(n, denseness):
         nonzeros = random.sample(list(range(n)), denseness)
         negatives = random.sample(nonzeros, denseness // 2)
         for i in nonzeros:
-            vec[str(i)] = 1
+            vec[i] = 1
         for i in negatives:
-            vec[str(i)] = -1
+            vec[i] = -1
     return vec
 
 
