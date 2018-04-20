@@ -2,7 +2,7 @@ import xml.etree.ElementTree
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
 from distutils.util import strtobool
-import squintinglinguist
+#  import squintinglinguist
 import pickle
 import random
 import os
@@ -22,7 +22,6 @@ testbatchsize = int(properties["testbatchsize"])
 authorcategorisation = bool(strtobool(properties["authorcategorisation"]))
 gendercategorisation = bool(strtobool(properties["gendercategorisation"]))
 textcategorisation = bool(strtobool(properties["textcategorisation"]))
-frequencythreshold = int(properties["frequencythreshold"])
 wordstatsfile = str(properties["wordstatsfile"])
 resourcedirectory = str(properties["resourcedirectory"])
 filenamepattern = str(properties["filenamepattern"])
@@ -97,7 +96,7 @@ with open(categorymodelfilename, "wb") as outfile:
             modelitem["category"] = facittable[authorname]
         e = xml.etree.ElementTree.parse(file).getroot()
         for b in e.iter("document"):
-            newtext = squintinglinguist.generalise(b.text)
+            newtext = b.text  # squintinglinguist.generalise(b.text)
             avector = stringspace.textvector(newtext, frequencyweighting)
             if textcategorisation:
                 textindex += 1
@@ -110,10 +109,10 @@ with open(categorymodelfilename, "wb") as outfile:
                 pickle.dump(modelitem, outfile)
                 n += 1
             if authorcategorisation:
-                workingvector = sparsevectors.sparseadd(workingvector, avector)
+                workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
             if gendercategorisation:
                 catitem[facittable[authorname]] = sparsevectors.sparseadd(catitem[facittable[authorname]],
-                                                                          avector)
+                                                                          sparsevectors.normalise(avector))
         if authorcategorisation:
             modelitem["vector"] = workingvector
             pickle.dump(modelitem, outfile)
