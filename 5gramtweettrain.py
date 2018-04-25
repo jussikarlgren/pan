@@ -66,7 +66,7 @@ stringspace.importstats(wordstatsfile)
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
     filenamelist = filenamelist[:testbatchsize]
-logger("Going on with a file list of " + str(len(filenamelist)) + " items.", monitor)
+logger("Going forth with a file list of " + str(len(filenamelist)) + " items.", monitor)
 
 if textcategorisation:
     logger("Text target space", monitor)
@@ -128,6 +128,7 @@ with open(categorymodelfilename, "wb") as outfile:
             pickle.dump(modelitem, outfile)
             n += 1
 logger("Done training files resulting in " + str(n) + " vectors.", monitor)
+logger("Vectors saved to " + categorymodelfilename, monitor)
 # output character patterns to be able to generate new tweetvectors for separate testing on trained data
 logger("Saving character setup.", monitor)
 stringspace.savecharacterspace(charactervectorspacefilename)
