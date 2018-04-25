@@ -6,19 +6,24 @@ import os
 import re
 from logger import logger
 import pickle
+from nltk import word_tokenize
+import sparsevectors
 
 debug = False
 monitor = True
 error = True
 
-wordspacefile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.s.wordspace"
-wordstatsfile = "/home/jussi/data/wordspaces/pan18-5gram.fix.sorted.new.s.wordstats"
+ngramspacefile = "/home/jussi/data/wordspaces/pan18.5gramspace"
+ngramstatsfile = "/home/jussi/data/wordspaces/pan18.5gramstats"
+wordspacefile = "/home/jussi/data/wordspaces/pan18.wordspace"
+wordstatsfile = "/home/jussi/data/wordspaces/pan18.wordstats"
 resourcedirectory = "/home/jussi/data/pan/pan18-author-profiling-training-2018-02-27/en/text/"
 
 charspace = {}
 dimensionality = 2000
 denseness = 10
 seen = collections.Counter()
+seenw = collections.Counter()
 stringspace = StringSequenceSpace(dimensionality, denseness)
 window = 5
 
@@ -40,25 +45,34 @@ i = 0
 batch = 100
 j = 0
 k = 0
-vectoroutfile = open(wordspacefile, 'wb')
-logger("Writing vectors to " + wordspacefile, monitor)
+ngramvectoroutfile = open(ngramspacefile, 'wb')
+wordvectoroutfile = open(wordspacefile, 'wb')
+logger("Writing vectors to " + ngramspacefile, monitor)
 for file in filenamelist:
     i += 1
     j += 1
     k += 1
     if j > batch:
         j = 0
-        statsoutfile = open(wordstatsfile, 'w')
-        logger("Writing " + str(sum(seen.values())) + " items to " + wordstatsfile, monitor)
+        ngramstatsoutfile = open(ngramstatsfile, 'w')
+        logger("Writing " + str(sum(seen.values())) + " items to " + ngramstatsfile, monitor)
         for something in seen:
             if seen[something] > 1:
-                statsoutfile.write(something + "\t" + str(seen[something]) + "\n")
-        statsoutfile.flush()
-        statsoutfile.close()
+                ngramstatsoutfile.write(something + "\t" + str(seen[something]) + "\n")
+        ngramstatsoutfile.flush()
+        ngramstatsoutfile.close()
+        wordstatsoutfile = open(wordstatsfile, 'w')
+        logger("Writing " + str(sum(seenw.values())) + " items to " + wordstatsfile, monitor)
+        for something in seenw:
+            if seenw[something] > 1:
+                wordstatsoutfile.write(something + "\t" + str(seenw[something]) + "\n")
+        wordstatsoutfile.flush()
+        wordstatsoutfile.close()
     logger("Computing ngram frequency-based weights with " + str(i) + " files " + str(file), monitor)
     e = xml.etree.ElementTree.parse(file).getroot()
     for b in e.iter("document"):
         string = b.text
+        words = word_tokenize(string)
         str(string).replace("\n","")
         windows = [string[ii:ii + window] for ii in range(len(string) - window + 1)]
         for sequence in windows:
@@ -68,6 +82,13 @@ for file in filenamelist:
                 itemj = {}
                 itemj["string"] = sequence
                 itemj["indexvector"] = thisvector
-                pickle.dump(itemj, vectoroutfile)
+                pickle.dump(itemj, ngramvectoroutfile)
+        for word in words:
+            seenw[word] += 1
+            if seenw[word] == 1:
+                itemj = {}
+                itemj["string"] = sequence
+                itemj["indexvector"] = sparsevectors.newrandomvector(dimensionality, denseness)
+                pickle.dump(itemj, wordvectoroutfile)
 
 
