@@ -37,7 +37,7 @@ def importvectors(filename):
             itemspace.name[itemj["authorindex"]] = itemj["authorname"]
             categories.add(itemj["category"])
             n += 1
-            if n > testbatchsize:
+            if n >= testbatchsize:
                 break
         except EOFError:
             goingalong = False
@@ -50,9 +50,11 @@ logger("Testing targetspace with " + str(len(categories)) + " categories, " + st
        " test items. ", monitor)
 
 iter = 0
+resultaggregator = []
+prunedresultaggregator = []
 for iterations in range(numberofiterations):
     iter += 1
-    logger("Iteration " + str(iter), monitor)
+    logger("Iteration " + str(iter) + " of " + str(numberofiterations) + ".", monitor)
     items = list(itemspace.items())
     if testtrainfraction > 0:
         random.shuffle(items)
@@ -64,12 +66,65 @@ for iterations in range(numberofiterations):
         knownvectors = items
     logger("Calculating neighbours for " + str(len(testvectors)) +
            " test items and " + str(len(knownvectors)) + " target items.", monitor)
+
+    cleanup = True
+    cleanuppooldepth = 11
+    if cleanup:
+        logger("Pruning.", monitor)
+        prunedknownvectors = []
+        throwout = {}
+        friendstats = {}
+        for c in categories:
+            throwout[c] = 0
+            friendstats[c] = 0
+        nn = 0
+        for candidate in knownvectors:
+            nn += 1
+            thiscategory = itemspace.category[candidate]
+            friends = {}
+            for friend in knownvectors:
+                if not friend == candidate:
+                    friends[friend] = itemspace.similarity(candidate, friend)
+            sortedfriends = sorted(friends, key=lambda hh: friends[hh], reverse=True)[:cleanuppooldepth]
+            whatitis = {}
+            for c in categories:
+                whatitis[c] = 0
+            for potentialfriend in sortedfriends:
+                whatitis[itemspace.category[potentialfriend]] += 1
+            if whatitis[thiscategory] > cleanuppooldepth / 3:
+                prunedknownvectors.append(candidate)
+            else:
+                throwout[thiscategory] += 1
+                friendstats[thiscategory] += whatitis[thiscategory]
+                logger(str(nn) + "\tThrew ut a " + str(thiscategory) +
+                       " with " + str(whatitis[thiscategory]) + " correct friends.",
+                       debug)
+#        knownvectors = newknownvectors
+        logger("Pruned targets to " + str(len(prunedknownvectors)) + " items.", monitor)
+        for c in categories:
+            qq = 0
+            if friendstats[c] > 0:
+                qq = throwout[c] / friendstats[c]
+            logger(c + " " + str(throwout[c]) + " " + str(qq), monitor)
+
+
+
     neighbours = {}
+    prunedneighbours = {}
     for item in testvectors:
         neighbours[item] = {}
+        prunedneighbours[item] = {}
         for otheritem in knownvectors:
             neighbours[item][otheritem] = itemspace.similarity(item, otheritem)
+            if otheritem in prunedknownvectors:
+                prunedneighbours[item][otheritem] = neighbours[item][otheritem]
     logger("Done calculating neighbours", monitor)
+
+
+
+
+
+
 
     relativeneighbourhood = False
     if relativeneighbourhood:
@@ -86,8 +141,10 @@ for iterations in range(numberofiterations):
             print(str(item), itemspace.name[item])
 
     result = {}
+    prunedresult = {}
     for c in categories:
         result[c] = {}
+        prunedresult[c] = {}
 
     for itempooldepth in [1, 11]:
         logger("Pool depth " + str(itempooldepth), monitor)
@@ -96,14 +153,20 @@ for iterations in range(numberofiterations):
         if votelinkage:
             logger("Votelinkage", monitor)
         confusion = ConfusionMatrix()
+        prunedconfusion = ConfusionMatrix()
         targetscore = {}
+        prunedtargetscore = {}
         for item in testvectors:
             sortedneighbours = sorted(neighbours[item], key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
+            prunedsortedneighbours = sorted(prunedneighbours[item], key=lambda hh: prunedneighbours[item][hh], reverse=True)[:itempooldepth]
             for target in categories:
                 targetscore[target] = 0
+                prunedtargetscore[target] = 0
             if averagelinkage:  # take all test neighbours and sum their scores
                 for neighbour in sortedneighbours:
                     targetscore[itemspace.category[neighbour]] += neighbours[item][neighbour]
+                for neighbour in prunedsortedneighbours:
+                    prunedtargetscore[itemspace.category[neighbour]] += prunedneighbours[item][neighbour]
             elif maxlinkage:    # use only the closest neighbour's score
                 for neighbour in sortedneighbours:
                     if targetscore[itemspace.category[neighbour]] < neighbours[item][neighbour]:
@@ -112,14 +175,25 @@ for iterations in range(numberofiterations):
                 for neighbour in sortedneighbours:
                     targetscore[itemspace.category[neighbour]] += 1
             sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
+            prunedsortedpredictions = sorted(categories, key=lambda ia: prunedtargetscore[ia], reverse=True)
             prediction = sortedpredictions[0]
+            prunedprediction = prunedsortedpredictions[0]
             confusion.addconfusion(itemspace.category[item], prediction)
+            prunedconfusion.addconfusion(itemspace.category[item], prunedprediction)
         confusion.evaluate()
+        prunedconfusion.evaluate()
         for c in categories:
             try:
                 result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
+                prunedresult[c][itempooldepth] = prunedconfusion.carat[c] / prunedconfusion.weight[c]
             except KeyError:
                 result[c][itempooldepth] = 0
+                prunedresult[c][itempooldepth] = 0
     logger("Done testing.", monitor)
     for c in categories:
         print(c, result[c], sep="\t")
+        print(c, prunedresult[c], sep="\t")
+        resultaggregator.append((c, result[c]))
+        prunedresultaggregator.append((c, prunedresult[c]))
+print(str(resultaggregator))
+print(str(prunedresultaggregator))
