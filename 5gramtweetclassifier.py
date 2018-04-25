@@ -63,7 +63,7 @@ for file in filenamelist:
     for b in e.iter("document"):
         newtext = squintinglinguist.generalise(b.text)
         avector = stringspace.textvector(newtext, frequencyweighting)
-        workingvector = sparsevectors.sparseadd(workingvector, avector)
+        workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
 #    modelitem["vector"] = workingvector
     nn += 1
     if nn > testbatchsize:
@@ -156,3 +156,10 @@ logger("Done testing files.", monitor)
 
 for c in categories:
     print(c, result[c], sep="\t")
+
+t = "@WantHerOutfit I love that jacket! - Are you still doing the site - would love to do another shoot again"
+s = stringspace.textvector(t)
+print(" cee7faf942feaba21ea714db1fff401c.xml")
+for otheritem in targetspace.items():
+    print(targetspace.name[otheritem])
+    print(sparsevectors.sparsecosine(s, targetspace.indexspace[otheritem]))
