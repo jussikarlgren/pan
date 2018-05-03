@@ -1,4 +1,6 @@
 import xml.etree.ElementTree
+
+import squintinglinguist
 from stringsequencespace import StringSequenceSpace
 from propertyreader import load_properties
 from distutils.util import strtobool
@@ -29,6 +31,9 @@ genderfacitfilename = str(properties["genderfacitfilename"])
 charactervectorspacefilename = str(properties["charactervectorspacefilename"])
 categorymodelfilename = str(properties["categorymodelfilename"])
 frequencyweighting = bool(strtobool(properties["frequencyweighting"]))
+generalise = bool(strtobool(properties["generalise"]))
+featurise = bool(strtobool(properties["featurise"]))
+parse = bool(strtobool(properties["parse"]))
 
 
 def readgender(genderfile):
@@ -82,6 +87,8 @@ logger("Started training files.", monitor)
 authorindex = 0
 textindex = 0
 n = 0
+
+
 with open(categorymodelfilename, "wb") as outfile:
     for file in filenamelist:
         authorname = file.split(".")[0].split("/")[-1]
@@ -96,8 +103,17 @@ with open(categorymodelfilename, "wb") as outfile:
             modelitem["category"] = facittable[authorname]
         e = xml.etree.ElementTree.parse(file).getroot()
         for b in e.iter("document"):
-            newtext = b.text  # squintinglinguist.generalise(b.text)
+            newtext = b.text
+            if generalise:
+                newtext = squintinglinguist.generalise(newtext)
+#                logger(newtext, monitor)
             avector = stringspace.textvector(newtext, frequencyweighting)
+            if featurise:
+                features = squintinglinguist.featurise(b.text)
+#                logger(features,monitor)
+                for feature in features:
+                    fv = stringspace.getvector(feature)
+                    avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(fv), stringspace.frequencyweight(feature))
             if textcategorisation:
                 textindex += 1
                 modelitem = {}
