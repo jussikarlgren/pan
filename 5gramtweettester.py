@@ -23,7 +23,6 @@ votelinkage = bool(strtobool(properties["votelinkage"]))
 categorymodelfilename = str(properties["categorymodelfilename"])
 numberofiterations = int(properties["numberofiterations"])
 
-
 def importvectors(filename):
     logger("Reading from " + filename, monitor)
     cannedindexvectors = open(filename, "rb")
@@ -67,11 +66,11 @@ for iterations in range(numberofiterations):
     logger("Calculating neighbours for " + str(len(testvectors)) +
            " test items and " + str(len(knownvectors)) + " target items.", monitor)
 
-    cleanup = True
+    cleanup = False  # this has now been shown not to be a good thing
     cleanuppooldepth = 11
+    prunedknownvectors = []
     if cleanup:
         logger("Pruning.", monitor)
-        prunedknownvectors = []
         throwout = {}
         friendstats = {}
         for c in categories:
@@ -146,54 +145,63 @@ for iterations in range(numberofiterations):
         result[c] = {}
         prunedresult[c] = {}
 
-    for itempooldepth in [1, 11]:
-        logger("Pool depth " + str(itempooldepth), monitor)
-        if averagelinkage:
-            logger("Averagelinkage", monitor)
-        if votelinkage:
-            logger("Votelinkage", monitor)
-        confusion = ConfusionMatrix()
-        prunedconfusion = ConfusionMatrix()
-        targetscore = {}
-        prunedtargetscore = {}
-        for item in testvectors:
-            sortedneighbours = sorted(neighbours[item], key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
+    logger("Pool depth " + str(itempooldepth), monitor)
+    if averagelinkage:
+        logger("Averagelinkage", monitor)
+    if votelinkage:
+        logger("Votelinkage", monitor)
+    confusion = ConfusionMatrix()
+    prunedconfusion = ConfusionMatrix()
+    targetscore = {}
+    prunedtargetscore = {}
+    for item in testvectors:
+        sortedneighbours = sorted(neighbours[item], key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
+        if cleanup:
             prunedsortedneighbours = sorted(prunedneighbours[item], key=lambda hh: prunedneighbours[item][hh], reverse=True)[:itempooldepth]
-            for target in categories:
-                targetscore[target] = 0
-                prunedtargetscore[target] = 0
-            if averagelinkage:  # take all test neighbours and sum their scores
-                for neighbour in sortedneighbours:
-                    targetscore[itemspace.category[neighbour]] += neighbours[item][neighbour]
+        for target in categories:
+            targetscore[target] = 0
+            prunedtargetscore[target] = 0
+        if averagelinkage:  # take all test neighbours and sum their scores
+            for neighbour in sortedneighbours:
+                targetscore[itemspace.category[neighbour]] += neighbours[item][neighbour]
+            if cleanup:
                 for neighbour in prunedsortedneighbours:
                     prunedtargetscore[itemspace.category[neighbour]] += prunedneighbours[item][neighbour]
-            elif maxlinkage:    # use only the closest neighbour's score
-                for neighbour in sortedneighbours:
-                    if targetscore[itemspace.category[neighbour]] < neighbours[item][neighbour]:
-                        targetscore[itemspace.category[neighbour]] = neighbours[item][neighbour]
-            elif votelinkage:
-                for neighbour in sortedneighbours:
-                    targetscore[itemspace.category[neighbour]] += 1
-            sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
+        elif maxlinkage:    # use only the closest neighbour's score
+            for neighbour in sortedneighbours:
+                if targetscore[itemspace.category[neighbour]] < neighbours[item][neighbour]:
+                    targetscore[itemspace.category[neighbour]] = neighbours[item][neighbour]
+        elif votelinkage:
+            for neighbour in sortedneighbours:
+                targetscore[itemspace.category[neighbour]] += 1
+        sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
+        if cleanup:
             prunedsortedpredictions = sorted(categories, key=lambda ia: prunedtargetscore[ia], reverse=True)
-            prediction = sortedpredictions[0]
+        prediction = sortedpredictions[0]
+        if cleanup:
             prunedprediction = prunedsortedpredictions[0]
-            confusion.addconfusion(itemspace.category[item], prediction)
+        confusion.addconfusion(itemspace.category[item], prediction)
+        if cleanup:
             prunedconfusion.addconfusion(itemspace.category[item], prunedprediction)
-        confusion.evaluate()
+    confusion.evaluate()
+    if cleanup:
         prunedconfusion.evaluate()
-        for c in categories:
-            try:
-                result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
-                prunedresult[c][itempooldepth] = prunedconfusion.carat[c] / prunedconfusion.weight[c]
-            except KeyError:
-                result[c][itempooldepth] = 0
-                prunedresult[c][itempooldepth] = 0
-    logger("Done testing.", monitor)
     for c in categories:
-        print(c, result[c], sep="\t")
+        try:
+            result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
+            prunedresult[c][itempooldepth] = prunedconfusion.carat[c] / prunedconfusion.weight[c]
+        except KeyError:
+            result[c][itempooldepth] = 0
+            prunedresult[c][itempooldepth] = 0
+logger("Done testing.", monitor)
+for c in categories:
+    print(c, result[c], sep="\t")
+    if cleanup:
         print(c, prunedresult[c], sep="\t")
-        resultaggregator.append((c, result[c]))
+    resultaggregator.append((c, result[c]))
+    if cleanup:
         prunedresultaggregator.append((c, prunedresult[c]))
+
 print(str(resultaggregator))
-print(str(prunedresultaggregator))
+if cleanup:
+    print(str(prunedresultaggregator))
