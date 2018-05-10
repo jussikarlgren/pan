@@ -5,38 +5,43 @@ import pickle
 import stringsequencespace
 import sparsevectors
 from logger import logger
-from confusionmatrix import ConfusionMatrix
 import os
 import re
 import xml.etree.ElementTree
 import squintinglinguist
 
 """
-This program takes a PAN file and runs it against precomputed vectors.
+This program takes PAN files and runs them against precomputed vectors.
 """
 
 
-properties = load_properties("5gramtweetnewtester.properties")
+properties = load_properties("5gramtweetclassifier.properties")
 dimensionality = int(properties["dimensionality"])
 denseness = int(properties["denseness"])
 debug = bool(strtobool(properties["debug"]))
 monitor = bool(strtobool(properties["monitor"]))
 error = bool(strtobool(properties["error"]))
-testbatchsize = int(properties["testbatchsize"])
 itempooldepth = int(properties["itempooldepth"])
 averagelinkage = bool(strtobool(properties["averagelinkage"]))
 maxlinkage = bool(strtobool(properties["maxlinkage"]))
 votelinkage = bool(strtobool(properties["votelinkage"]))
 categorymodelfilename = str(properties["categorymodelfilename"])
 charactervectorspacefilename = str(properties["charactervectorspacefilename"])
-numberofiterations = int(properties["numberofiterations"])
 resourcedirectory = str(properties["resourcedirectory"])
 filenamepattern = str(properties["filenamepattern"])
 frequencyweighting = bool(strtobool(properties["frequencyweighting"]))
+fulltext = bool(strtobool(properties["fulltext"]))
+generalise = bool(strtobool(properties["generalise"]))
+featurise = bool(strtobool(properties["featurise"]))
+parse = bool(strtobool(properties["parse"]))
+postriples = bool(strtobool(properties["postriples"]))
+postriplefile = str(properties["postriplefile"])
+outputdirectory = str(properties["outputdirectory"])
+testbatchsize = int(properties["testbatchsize"])
+window = int(properties["window"])
 
-
-stringspace = stringsequencespace.StringSequenceSpace()
-stringspace.importcharacterspace(charactervectorspacefilename)
+stringspace = stringsequencespace.StringSequenceSpace(dimensionality, denseness, window)
+stringspace.importelementspace(charactervectorspacefilename)
 
 # create new vectors for test set
 
@@ -57,20 +62,31 @@ for file in filenamelist:
     authorindex += 1
     logger("Reading " + str(authorindex) + " " + file, monitor)
     workingvector = sparsevectors.newemptyvector(dimensionality)
-#    modelitem = {}
-#    modelitem["authorname"] = authorname
     e = xml.etree.ElementTree.parse(file).getroot()
+
     for b in e.iter("document"):
-        newtext = squintinglinguist.generalise(b.text)
-        avector = stringspace.textvector(newtext, frequencyweighting)
+        origtext = b.text
+        avector = sparsevectors.newemptyvector(dimensionality)
+        if fulltext:
+            avector = sparsevectors.normalise(stringspace.textvector(origtext, frequencyweighting))
+        if generalise:
+            newtext = squintinglinguist.generalise(origtext)
+            avector = sparsevectors.sparseadd(avector,
+                                              sparsevectors.normalise(stringspace.textvector(newtext,
+                                                                                             frequencyweighting)))
+        if featurise:
+            features = squintinglinguist.featurise(origtext)
+            for feature in features:
+                fv = stringspace.getvector(feature)
+                avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(fv),
+                                                  stringspace.frequencyweight(feature))
+        if postriples:
+            posttriplevector = stringspace.postriplevector(origtext)
+            avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
         workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
-#    modelitem["vector"] = workingvector
     nn += 1
-    if nn > testbatchsize:
-        break
     testitemspace.additem(authorindex, workingvector)
     testitemspace.name[authorindex] = authorname
-#    testvectors[authorindex] = modelitem
 logger("Done building " + str(nn) + " vectors.", monitor)
 
 
@@ -88,78 +104,53 @@ while goingalong:
         targetspace.name[itemj["authorindex"]] = itemj["authorname"]
         categories.add(itemj["category"])
         n += 1
+        if n >= testbatchsize:
+            break
     except EOFError:
         goingalong = False
 logger("Read " + str(n) + " target vectors.", monitor)
 logger("Testing targetspace with " + str(len(categories)) + " categories, " + str(len(testitemspace.items()))
        + " test items and " +
        str(len(targetspace.items())) + " target items. ", monitor)
+logger("Pool depth " + str(itempooldepth), monitor)
+if averagelinkage:
+    logger("Averagelinkage", monitor)
+if votelinkage:
+    logger("Votelinkage", monitor)
 
-neighbours = {}
+nn = 0
 for item in testitemspace.items():
-    neighbours[item] = {}
+    nn += 1
+    logger("Testing\t" + str(nn) + "\t" + testitemspace.name[item], monitor)
+    neighbours = {}
     for otheritem in targetspace.items():
         if testitemspace.name[item] == targetspace.name[otheritem]:
             continue
-        neighbours[item][otheritem] = targetspace.similarity(item, otheritem)
-logger("Done calculating neighbours", monitor)
+        neighbours[otheritem] = sparsevectors.sparsecosine(testitemspace.indexspace[item], targetspace.indexspace[otheritem])
+    targetscore = {}
+    sortedneighbours = sorted(neighbours,
+                              key=lambda hh: neighbours[hh], reverse=True)[:itempooldepth]
+    for target in categories:
+        targetscore[target] = 0
+    if averagelinkage:  # take all test neighbours and sum their scores
+        for neighbour in sortedneighbours:
+            targetscore[targetspace.category[neighbour]] += neighbours[neighbour]
+    elif maxlinkage:    # use only the closest neighbour's score
+        for neighbour in sortedneighbours:
+            if targetscore[targetspace.category[neighbour]] < neighbours[neighbour]:
+                targetscore[targetspace.category[neighbour]] = neighbours[neighbour]
+    elif votelinkage:
+        for neighbour in sortedneighbours:
+            targetscore[targetspace.category[neighbour]] += 1
+    sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
+    prediction = sortedpredictions[0]
+    logger("Tested " + testitemspace.name[item] + ": " + prediction, monitor)
+    with open(outputdirectory + testitemspace.name[item] + ".xml", "w") as outfile:
+        print("<author id=" + testitemspace.name[item], file=outfile)
+        print("        lang=en", file=outfile)
+        print("        gender_txt=" + prediction, file=outfile)
+        print("/>", file=outfile)
 
-relativeneighbourhood = False
-if relativeneighbourhood:
-    print("\t", end="\t")
-    for item in testitemspace.items():
-        print(item, end="\t")
-    print("\n")
-    for item in testitemspace.items():
-        print(item, end="\t")
-        for otheritem in testitemspace.items():
-            print(neighbours[item][otheritem], end="\t")
-        print("\n")
-    for item in testitemspace.items():
-        print(str(item), targetspace.name[item])
-
-result = {}
-for c in categories:
-    result[c] = {}
-
-for iterations in range(numberofiterations):
-    for itempooldepth in [1, 11]:
-        logger("Pool depth " + str(itempooldepth), monitor)
-        if averagelinkage:
-            logger("Averagelinkage", monitor)
-        if votelinkage:
-            logger("Votelinkage", monitor)
-        confusion = ConfusionMatrix()
-        targetscore = {}
-        for item in testitemspace.items():
-            sortedneighbours = sorted(neighbours[item],
-                                      key=lambda hh: neighbours[item][hh], reverse=True)[:itempooldepth]
-            for target in categories:
-                targetscore[target] = 0
-            if averagelinkage:  # take all test neighbours and sum their scores
-                for neighbour in sortedneighbours:
-                    targetscore[targetspace.category[neighbour]] += neighbours[item][neighbour]
-            elif maxlinkage:    # use only the closest neighbour's score
-                for neighbour in sortedneighbours:
-                    if targetscore[targetspace.category[neighbour]] < neighbours[item][neighbour]:
-                        targetscore[targetspace.category[neighbour]] = neighbours[item][neighbour]
-            elif votelinkage:
-                for neighbour in sortedneighbours:
-                    targetscore[targetspace.category[neighbour]] += 1
-            sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
-            prediction = sortedpredictions[0]
-            confusion.addconfusion(targetspace.category[item], prediction)
-        confusion.evaluate()
-        for c in categories:
-            result[c][itempooldepth] = confusion.carat[c] / confusion.weight[c]
 logger("Done testing files.", monitor)
 
-for c in categories:
-    print(c, result[c], sep="\t")
 
-t = "@WantHerOutfit I love that jacket! - Are you still doing the site - would love to do another shoot again"
-s = stringspace.textvector(t)
-print(" cee7faf942feaba21ea714db1fff401c.xml")
-for otheritem in targetspace.items():
-    print(targetspace.name[otheritem])
-    print(sparsevectors.sparsecosine(s, targetspace.indexspace[otheritem]))

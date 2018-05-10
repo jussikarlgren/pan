@@ -31,9 +31,12 @@ genderfacitfilename = str(properties["genderfacitfilename"])
 charactervectorspacefilename = str(properties["charactervectorspacefilename"])
 categorymodelfilename = str(properties["categorymodelfilename"])
 frequencyweighting = bool(strtobool(properties["frequencyweighting"]))
+fulltext = bool(strtobool(properties["fulltext"]))
 generalise = bool(strtobool(properties["generalise"]))
 featurise = bool(strtobool(properties["featurise"]))
 parse = bool(strtobool(properties["parse"]))
+postriples = bool(strtobool(properties["postriples"]))
+postriplefile = str(properties["postriplefile"])
 
 
 def readgender(genderfile):
@@ -103,17 +106,23 @@ with open(categorymodelfilename, "wb") as outfile:
             modelitem["category"] = facittable[authorname]
         e = xml.etree.ElementTree.parse(file).getroot()
         for b in e.iter("document"):
-            newtext = b.text
+            origtext = b.text
+            if fulltext:
+                avector = stringspace.textvector(origtext, frequencyweighting)
             if generalise:
-                newtext = squintinglinguist.generalise(newtext)
-#                logger(newtext, monitor)
-            avector = stringspace.textvector(newtext, frequencyweighting)
+                newtext = squintinglinguist.generalise(origtext)
+                avector = sparsevectors.sparseadd(avector,
+                                                  sparsevectors.normalise(stringspace.textvector(newtext,
+                                                                                                 frequencyweighting)))
             if featurise:
-                features = squintinglinguist.featurise(b.text)
-#                logger(features,monitor)
+                features = squintinglinguist.featurise(origtext)
                 for feature in features:
                     fv = stringspace.getvector(feature)
-                    avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(fv), stringspace.frequencyweight(feature))
+                    avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(fv),
+                                                      stringspace.frequencyweight(feature))
+            if postriples:
+                posttriplevector = stringspace.postriplevector(origtext)
+                avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
             if textcategorisation:
                 textindex += 1
                 modelitem = {}
@@ -147,5 +156,5 @@ logger("Done training files resulting in " + str(n) + " vectors.", monitor)
 logger("Vectors saved to " + categorymodelfilename, monitor)
 # output character patterns to be able to generate new tweetvectors for separate testing on trained data
 logger("Saving character setup.", monitor)
-stringspace.savecharacterspace(charactervectorspacefilename)
-
+stringspace.saveelementspace(charactervectorspacefilename)
+stringspace.savepospermutations(postriplefile)

@@ -7,6 +7,7 @@ import nltk
 
 error = True
 
+
 class StringSequenceSpace:
     def __init__(self, dimensionality=2000, denseness=10, window=5):
         self.indexspace = {}
@@ -15,9 +16,18 @@ class StringSequenceSpace:
         self.window = window
         self.globalfrequency = {}
         self.bign = 0
-
-    def dummy(self):
-        print("dummy")
+        self.pospermutations = {}
+        self.pospermutations["vector"] = {90: -1,
+                                          290: -1,
+                                          733: 1,
+                                          873: 1,
+                                          885: 1,
+                                          1268: -1,
+                                          1269: 1,
+                                          1523: -1,
+                                          1569: -1,
+                                          1573: 1}
+    #            sparsevectors.newrandomvector(dimensionality,denseness)
 
     def importstats(self, wordstatsfile, loglevel=False):
         logger(wordstatsfile, loglevel)
@@ -37,7 +47,6 @@ class StringSequenceSpace:
                 logger("Error at line " + str(i), error)
 
     def textvector(self, string, frequencyweighting=True, loglevel=False):
-        logger("----" + string, loglevel)
         uvector = sparsevectors.newemptyvector(self.dimensionality)
         if self.window > 0:
             windows = [string[ii:ii + self.window] for ii in range(len(string) - self.window + 1)]
@@ -63,15 +72,15 @@ class StringSequenceSpace:
                 uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(self.indexspace[w]), factor)
         return uvector
 
-    def savecharacterspace(self, filename):
+    def saveelementspace(self, filename):
         with open(filename, "wb") as outfile:
             pickle.dump(self.indexspace, outfile)
 
-    def importcharacterspace(self, indexvectorfile):
+    def importelementspace(self, indexvectorfile):
         self.indexspace = pickle.load(open(indexvectorfile, "rb"))
 
     def makevector(self, string):
-        stringvector = {}  #  np.array([0] * self.dimensionality)
+        stringvector = {}  # np.array([0] * self.dimensionality)
         for character in string[::-1]:    # reverse the string! (to keep strings that share prefixes similar)
             if character not in self.indexspace:
                 vec = {}
@@ -95,3 +104,28 @@ class StringSequenceSpace:
             w = 0.5
         return w
 
+    def getvector(self, word):
+        if word not in self.indexspace:
+            self.indexspace[word] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
+        return self.indexspace[word]
+
+    def postriplevector(self, string, poswindow=3):
+        words = nltk.word_tokenize(string)
+        poses = [("START","BEG")] + nltk.pos_tag(words) + [("END","END")]
+        windows = [poses[ii:ii + poswindow] for ii in range(len(poses) - poswindow + 1 + 2)]
+        onevector = self.pospermutations["vector"]
+        vector = sparsevectors.newemptyvector(self.dimensionality)
+        for sequence in windows:
+            for item in sequence:
+                if item[1] not in self.pospermutations:
+                    self.pospermutations[item[1]] = sparsevectors.createpermutation(self.dimensionality)
+                onevector = sparsevectors.permute(onevector, self.pospermutations[item[1]])
+            vector = sparsevectors.sparseadd(vector, onevector)
+        return vector
+
+    def savepospermutations(self, filename):
+        with open(filename, "wb") as outfile:
+            pickle.dump(self.pospermutations, outfile)
+
+    def importpospermutations(self, filename):
+        self.pospermutations = pickle.load(open(filename, "rb"))
