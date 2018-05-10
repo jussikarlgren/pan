@@ -48,6 +48,9 @@ stringspace.importelementspace(charactervectorspacefilename)
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         resourcedirectory = sys.argv[1]
+    if len(sys.argv) > 2:
+        outputdirectory = sys.argv[2]
+
 
 
 
