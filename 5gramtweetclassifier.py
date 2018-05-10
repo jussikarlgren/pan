@@ -9,6 +9,8 @@ import os
 import re
 import xml.etree.ElementTree
 import squintinglinguist
+import sys
+
 
 """
 This program takes PAN files and runs them against precomputed vectors.
@@ -43,14 +45,22 @@ window = int(properties["window"])
 stringspace = stringsequencespace.StringSequenceSpace(dimensionality, denseness, window)
 stringspace.importelementspace(charactervectorspacefilename)
 
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        resourcedirectory = sys.argv[1]
+
+
+
 # create new vectors for test set
 
 filenamelist = []
-for filename in os.listdir(resourcedirectory):
-    hitlist = re.match(filenamepattern, filename)
-    if hitlist:  # and random.random() > 0.5:
-        filenamelist.append(os.path.join(resourcedirectory, filename))
-
+try:
+    for filename in os.listdir(resourcedirectory):
+        hitlist = re.match(filenamepattern, filename)
+        if hitlist:  # and random.random() > 0.5:
+            filenamelist.append(os.path.join(resourcedirectory, filename))
+except:
+    logger("No files found in " + resourcedirectory, error)
 
 logger("Start building vectors for " + str(len(filenamelist)) + " test files.", monitor)
 authorindex = 0
