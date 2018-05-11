@@ -18,6 +18,7 @@ This program takes PAN files and runs them against precomputed vectors.
 
 
 properties = load_properties("5gramtweetclassifier.properties")
+corenlphome = load_properties("CORENLP_HOME")
 dimensionality = int(properties["dimensionality"])
 denseness = int(properties["denseness"])
 debug = bool(strtobool(properties["debug"]))
@@ -41,6 +42,9 @@ postriplefile = str(properties["postriplefile"])
 outputdirectory = str(properties["outputdirectory"])
 testbatchsize = int(properties["testbatchsize"])
 window = int(properties["window"])
+
+os.environ["CORENLP_HOME"] = corenlphome
+
 
 stringspace = stringsequencespace.StringSequenceSpace(dimensionality, denseness, window)
 stringspace.importelementspace(charactervectorspacefilename)
