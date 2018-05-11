@@ -1,15 +1,17 @@
-from hyperdimensionalsemanticspace import SemanticSpace
-from propertyreader import load_properties
-from distutils.util import strtobool
+import os
+import re
+import sys
 import pickle
+import xml.etree.ElementTree
+
+from propertyreader import load_properties
+
+from hyperdimensionalsemanticspace import SemanticSpace
+from distutils.util import strtobool
 import stringsequencespace
 import sparsevectors
 from logger import logger
-import os
-import re
-import xml.etree.ElementTree
 import squintinglinguist
-import sys
 
 
 """
@@ -18,7 +20,7 @@ This program takes PAN files and runs them against precomputed vectors.
 
 
 properties = load_properties("5gramtweetclassifier.properties")
-corenlphome = load_properties("CORENLP_HOME")
+corenlphome = str(properties["CORENLP_HOME"])
 dimensionality = int(properties["dimensionality"])
 denseness = int(properties["denseness"])
 debug = bool(strtobool(properties["debug"]))
