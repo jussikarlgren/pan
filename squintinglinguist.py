@@ -3,6 +3,7 @@ from nltk import word_tokenize
 from nltk import pos_tag
 import re
 import semanticdependencyparse
+from logger import logger
 
 urlpatternexpression = re.compile(r"https?://[/A-Za-z0-9\.\-\?_]+", re.IGNORECASE)
 handlepattern = re.compile(r"@[A-Za-z0-9_\-±.]+", re.IGNORECASE)
@@ -776,7 +777,7 @@ lexicon["placeadverbial"] = ["aboard", "above", "abroad", "across", "ahead", "al
 
 
 
-def featurise(text):
+def featurise(text, loglevel=False):
     features = []
     sents = sent_tokenize(text)
     for sentence in sents:
@@ -788,7 +789,7 @@ def featurise(text):
         parsedfeatures = semanticdependencyparse.semanticdependencyparse(text)
         for featureset in parsedfeatures:
             features += featureset
-
+    logger(features, loglevel)
     return features
 
 
