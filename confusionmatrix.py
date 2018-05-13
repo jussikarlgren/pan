@@ -85,7 +85,7 @@ class ConfusionMatrix:
         for glitterlabel in sorted(self.glitter):
             if glitterweight[glitterlabel] > 0:
                 try:
-                    print(self.carat[glitterlabel] / glitterweight[glitterlabel], "\t", end="")
+                    print(self.carat[glitterlabel] / self.weight[glitterlabel], "\t", end="")
                 except KeyError:
                     print("0.0", "\t", end="")
             else:
