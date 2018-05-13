@@ -30,7 +30,7 @@ class ConfusionMatrix:
         for glitterlabel in sorted(self.glitter):
             print(glitterlabel, end="\t")
             glitterweight[glitterlabel] = 0
-        print("|", "sum", "correct", "precision", sep="\t")
+        print("|", "sum", "correct", "recall", sep="\t")
         # SEPARATOR LINE
         for gg in range(2 + len(self.glitter)):
             print("--------", end="\t")
@@ -80,12 +80,12 @@ class ConfusionMatrix:
             except KeyError:
                 print("0.0", "\t", end="")
         print("|")
-        # RECALL LINE
-        print("recall", "|", sep="\t", end="\t")
+        # PRECISION LINE
+        print("precision", "|", sep="\t", end="\t")
         for glitterlabel in sorted(self.glitter):
             if glitterweight[glitterlabel] > 0:
                 try:
-                    print(self.carat[glitterlabel] / self.weight[glitterlabel], "\t", end="")
+                    print(self.carat[glitterlabel] / glitterweight[glitterlabel], "\t", end="")
                 except KeyError:
                     print("0.0", "\t", end="")
             else:
