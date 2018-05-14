@@ -1,4 +1,7 @@
 import xml.etree.ElementTree
+import os
+
+os.environ["CORENLP_HOME"] = "/usr/share/stanford-corenlp-full/"
 
 import squintinglinguist
 from stringsequencespace import StringSequenceSpace
@@ -7,7 +10,6 @@ from distutils.util import strtobool
 #  import squintinglinguist
 import pickle
 import random
-import os
 import re
 
 import sparsevectors
@@ -37,6 +39,9 @@ featurise = bool(strtobool(properties["featurise"]))
 parse = bool(strtobool(properties["parse"]))
 postriples = bool(strtobool(properties["postriples"]))
 postriplefile = str(properties["postriplefile"])
+corenlp = str(properties["CORENLP_HOME"])
+os.environ["CORENLP_HOME"] = corenlp
+
 
 
 def readgender(genderfile):
@@ -69,7 +74,8 @@ random.shuffle(filenamelist)
 logger("Setting off with a file list of " + str(len(filenamelist)) + " items.", monitor)
 
 logger("Reading frequencies from " + wordstatsfile, monitor)
-stringspace.importstats(wordstatsfile)
+#stringspace.importstats(wordstatsfile)
+stringspace.importfrequencies(wordstatsfile)
 
 if len(filenamelist) > testbatchsize:
     random.shuffle(filenamelist)  # if we shuffle here the weights won't be as good i mean overtrained
@@ -90,7 +96,6 @@ logger("Started training files.", monitor)
 authorindex = 0
 textindex = 0
 n = 0
-
 
 with open(categorymodelfilename, "wb") as outfile:
     for file in filenamelist:
@@ -158,3 +163,5 @@ logger("Vectors saved to " + categorymodelfilename, monitor)
 logger("Saving character setup.", monitor)
 stringspace.saveelementspace(charactervectorspacefilename)
 stringspace.savepospermutations(postriplefile)
+stringspace.savefrequencies(wordstatsfile)
+
