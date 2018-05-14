@@ -151,7 +151,7 @@ logger("Done training files.", monitor)
 
 if outputmodel:
     # output character patterns to be able to generate new tweetvectors for separate testing on trained data
-    stringspace.savecharacterspace(charactervectorspacefilename)
+    stringspace.saveelementspace(charactervectorspacefilename)
     # output model here with info about the category of each model item
     with open(categorymodelfilename, "wb") as outfile:
         pickle.dump(targetspace, outfile)
