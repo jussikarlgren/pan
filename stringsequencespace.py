@@ -1,4 +1,6 @@
 import random
+from collections import Set
+
 import sparsevectors
 import pickle
 import math
@@ -9,8 +11,9 @@ error = True
 
 
 class StringSequenceSpace:
-    def __init__(self, dimensionality=2000, denseness=10, window=5):
+    def __init__(self, dimensionality=2000, denseness=10, window=5, bin=True):
         self.indexspace = {}
+        self.binaryfrequencies = bin
         self.dimensionality = dimensionality
         self.denseness = denseness
         self.window = window
@@ -46,6 +49,17 @@ class StringSequenceSpace:
             except UnicodeDecodeError:
                 logger("Error at line " + str(i), error)
 
+    def observe(self, string, loglevel=False):
+        if self.window > 0:
+            words = [string[ii:ii + self.window] for ii in range(len(string) - self.window + 1)]
+        else:
+            words = nltk.word_tokenize(string)
+        for w in words:
+            if w in self.globalfrequency:
+                self.globalfrequency[w] += 1
+            else:
+                self.globalfrequency[w] = 1
+
     def textvector(self, string, frequencyweighting=True, loglevel=False):
         uvector = sparsevectors.newemptyvector(self.dimensionality)
         if self.window > 0:
@@ -62,7 +76,11 @@ class StringSequenceSpace:
                 uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(thisvector), factor)
         else:
             words = nltk.word_tokenize(string)
-            for w in words:
+            if self.binaryfrequencies:
+                wordlist = set(words)  # not a list, a set but hey
+            else:
+                wordlist = words
+            for w in wordlist:
                 if frequencyweighting:
                     factor = self.frequencyweight(w)
                 else:
@@ -71,6 +89,8 @@ class StringSequenceSpace:
                     self.indexspace[w] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
                 uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(self.indexspace[w]), factor)
         return uvector
+
+
 
     def saveelementspace(self, filename):
         with open(filename, "wb") as outfile:
@@ -104,8 +124,9 @@ class StringSequenceSpace:
             w = 0.5
         return w
 
-    def getvector(self, word):
+    def getvector(self, word, loglevel=False):
         if word not in self.indexspace:
+            logger("Made new vector for " + word, loglevel)
             self.indexspace[word] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
         return self.indexspace[word]
 
@@ -129,3 +150,12 @@ class StringSequenceSpace:
 
     def importpospermutations(self, filename):
         self.pospermutations = pickle.load(open(filename, "rb"))
+
+    def savefrequencies(self, filename):
+        with open(filename, "wb") as outfile:
+            pickle.dump(self.globalfrequency, outfile)
+
+    def importfrequencies(self, filename):
+        self.globalfrequency = pickle.load(open(filename, "rb"))
+        for i in self.globalfrequency:
+            self.bign += self.globalfrequency[i]
