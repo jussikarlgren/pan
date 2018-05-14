@@ -9,7 +9,7 @@ parser_client = CoreNLPClient(
 #  past,  3psgpresent, past part, present, base, gerund/present participle
 verbposes = ["VBD", "VBZ", "VBN", "VBP", "VB", "VBG"]
 
-
+tag = "JiK"
 
 def semanticdependencyparse(string, loglevel=False):
     depgraph = parser_client.annotate(string)
@@ -114,30 +114,30 @@ def processdependencies(ss, loglevel=False):
         logger("tense situation in " + string, True)
     features = []
     if root > len(ss.token) / 2:
-        features.append("VERYLATEMAINV")
+        features.append(tag + "VERYLATEMAINV")
     elif root > len(ss.token) / 3:
-        features.append("LATEMAINV")
+        features.append(tag + "LATEMAINV")
     else:
-        features.append("EARLYMAINV")
+        features.append(tag + "EARLYMAINV")
     if 'aux' in scratch:
         for aa in scratch['aux']:
-            features.append(aa)
+            features.append(tag + aa)
     if mode:
-        features.append(mode)
+        features.append(tag + mode)
     if tense:
-        features.append(tense)
+        features.append(tag + tense)
     if negation:
-        features.append("NEGATION")
+        features.append(tag + "NEGATION")
     for np in npweight:
         if npweight[np] > 2:
-            features.append("HEAVYNP")
+            features.append(tag + "HEAVYNP")
     if subject:
         if sentenceitems[subject] == "I":
-            features.append("p1sgsubj")
+            features.append(tag + "p1sgsubj")
         if sentenceitems[subject] == "we":
-            features.append("p1plsubj")
+            features.append(tag + "p1plsubj")
         if sentenceitems[subject] == "you":
-            features.append("p2subj")
+            features.append(tag + "p2subj")
         #        logger(str(features) + "\t" + str(string) + "\t" + str(deps), True)
     return features
 
