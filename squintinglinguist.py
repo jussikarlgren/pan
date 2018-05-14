@@ -628,7 +628,8 @@ lexicon["hedgelist"] = ["apparently", "appear", "around", "basically", "effectiv
 
 lexicon["interjection"] = ["oops", "hello", "yea", "um", "ow", "aw", "huh", "em", "oo", "goo", "ugh", "oh", "eh", "hi",
                            "yeah", "ouch", "er", "hey", "uh", "uhhuh", "pow", "zowie", "zow", "lol", "hahah", "haha",
-                           "uh-huh", "cmon", "c'mon", "pffft", "uhhhh", "hmm", "hmmm", "hm"]
+                           "uh-huh", "cmon", "c'mon", "pffft", "uhhhh", "hmm", "hmmm", "hm", "omg", "ok", "wow", "ok",
+                           "tbh", "aw"]
 
 lexicon["timeadverbial"] = ["afterwards", "again", "earlier", "early", "eventually", "formerly", "immediately",
                             "initially", "instantly", "late", "lately", "later", "momentarily", "now", "nowadays",
@@ -785,11 +786,27 @@ def featurise(text, loglevel=False):
         for word in words:
             for feature in lexicon:
                 if word.lower() in lexicon[feature]:
-                    features.append(feature)
+                    features.append("JiK" + feature)
         parsedfeatures = semanticdependencyparse.semanticdependencyparse(text)
         for featureset in parsedfeatures:
             features += featureset
-    logger(features, loglevel)
+    logger(text + "->" + str(features), loglevel)
     return features
+
+
+goodgenderones = ["JiKlove", "JiKp1", "JiKp1sgsubj",
+                  "JiKamplifySurprise", "JiKinterjection", "JiKp2", "JiKPROGRESSIVE", "JiKPAST", "JiKshould",
+                  "JiKbe", "JiKwill", "JiKinsecure", "JiKplaceadverbial", "JiKthinkverbs", "JiKPASSIVE",
+                  "JiKsayverbs", "JiKprofanity", "JiKwould", "JiKhedgelist"]
+
+
+mediocremale = ["JiKp1plsubj",
+                                       "JiKsurprise", "JiKVERYLATEMAINV", "JiKcould", "JiKdislike", "JiKhave",
+                                       "JiKFUTURE", "JiKboredom", "JiKp3", "JiKEARLYMAINV"]
+mediocrefemale = ["JiKcan", "JiKp2subj",
+                                       "JiKamplifyTruly", "JiKhate", "JiKamplifier", "JiKpositive"]
+
+mediocregenderones = goodgenderones + mediocrefemale + mediocremale
+
 
 
