@@ -55,9 +55,6 @@ def sparsexor(onevec, othvec):
 def newemptyvector(n):
     return {}
 
-def hep():
-    print("hep")
-
 def newrandomvector(n, denseness):
     vec = {}
     if denseness % 2 != 0:
