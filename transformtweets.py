@@ -1,5 +1,4 @@
 import xml.etree.ElementTree
-from distutils.util import strtobool
 import squintinglinguist
 import os
 import re
