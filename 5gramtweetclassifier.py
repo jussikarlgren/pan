@@ -94,8 +94,10 @@ for file in filenamelist:
         origtext = b.text
         avector = sparsevectors.newemptyvector(dimensionality)
         if fulltext:
+            hit = True
             avector = sparsevectors.normalise(stringspace.textvector(origtext, frequencyweighting))
         if generalise:
+            hit = True
             newtext = squintinglinguist.generalise(origtext)
             avector = sparsevectors.sparseadd(avector,
                                               sparsevectors.normalise(stringspace.textvector(newtext,
@@ -110,6 +112,7 @@ for file in filenamelist:
                                               stringspace.frequencyweight(feature))
 
         if postriples:
+            hit = True
             poses = squintinglinguist.mildpositems(origtext)
             posttriplevector = stringspace.postriplevector(poses)
             avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
