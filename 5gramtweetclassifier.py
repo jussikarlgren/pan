@@ -110,7 +110,8 @@ for file in filenamelist:
                                               stringspace.frequencyweight(feature))
 
         if postriples:
-            posttriplevector = stringspace.postriplevector(origtext)
+            poses = squintinglinguist.mildpositems(origtext)
+            posttriplevector = stringspace.postriplevector(poses)
             avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
         workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
     nn += 1

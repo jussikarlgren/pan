@@ -130,9 +130,7 @@ class StringSequenceSpace:
             self.indexspace[word] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
         return self.indexspace[word]
 
-    def postriplevector(self, string, poswindow=3):
-        words = nltk.word_tokenize(string)
-        poses = [("START","BEG")] + nltk.pos_tag(words) + [("END","END")]
+    def postriplevector(self, poses, poswindow=3):
         windows = [poses[ii:ii + poswindow] for ii in range(len(poses) - poswindow + 1 + 2)]
         onevector = self.pospermutations["vector"]
         vector = sparsevectors.newemptyvector(self.dimensionality)

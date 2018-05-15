@@ -840,3 +840,18 @@ mediocrefemale = ["JiKcan", "JiKp2subj",
 
 mediocregenderones = goodgenderones + mediocrefemale + mediocremale
 
+def mildpositems(string, full=False):
+    leaveintags = ["IN", "DT", "MD", "PRP", "PRP$", "POS", "CC", "EX", "PDT", "RP", "TO", "WP", "WP$", "WDT", "WRB"]
+    words = word_tokenize(string)
+    poses = pos_tag(words)
+    if not full:
+        returnposes = [("START", "START")]
+        for p in poses:
+            if p[1] in leaveintags:
+                returnposes.append((p[1],p[1]))
+            else:
+                returnposes.append(p)
+        returnposes.append(("END","END"))
+    else:
+        returnposes = [("START", "BEG")] + poses + [("END", "END")]
+    return returnposes
