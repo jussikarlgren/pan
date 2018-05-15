@@ -9,6 +9,10 @@ urlpatternexpression = re.compile(r"https?://[/A-Za-z0-9\.\-\?_]+", re.IGNORECAS
 handlepattern = re.compile(r"@[A-Za-z0-9_\-±.]+", re.IGNORECASE)
 verbtags = ["VB", "VBZ", "VBP", "VBN", "VBD", "VBG"]
 
+def words(text):
+    words = word_tokenize(text)
+    return words
+
 
 def generalise(text, handlesandurls=True, nouns=True, verbs=True, adjectives=True, adverbs=False):
     accumulator = []
@@ -612,7 +616,12 @@ lexicon["amplifyTruly"] = ["absolutely", "definitely", "famously", "genuinely", 
 
 lexicon["amplifySurprise"] = ["amazingly", "dramatically", "drastically", "emphatically", "exceptionally", "extraordinarily",
                    "fantastically", "horribly", "incredibly", "insanely", "phenomenally", "remarkably", "ridiculously",
-                   "strikingly", "surprisingly", "terribly", "unusually", "wildly", "wonderfully"]
+                   "strikingly", "surprisingly", "terribly", "unusually", "wildly", "wonderfully",
+                              "amazing", "dramatic", "drastic", "emphatic", "exceptional",
+                              "extraordinary",
+                              "fantastic", "incredible", "phenomenal", "remarkable",
+                              "striking", "surprising","unusual"
+                              ]
 
 lexicon["negation"] = ["no", "none", "never", "not", "n't", "neither", "nor"]
 lexicon["amplifier"] = lexicon["amplifyGrade"] + lexicon["amplifySurprise"] + lexicon["amplifyTruly"]
@@ -629,14 +638,17 @@ lexicon["hedgelist"] = ["apparently", "appear", "around", "basically", "effectiv
 lexicon["interjection"] = ["oops", "hello", "yea", "um", "ow", "aw", "huh", "em", "oo", "goo", "ugh", "oh", "eh", "hi",
                            "yeah", "ouch", "er", "hey", "uh", "uhhuh", "pow", "zowie", "zow", "lol", "hahah", "haha",
                            "uh-huh", "cmon", "c'mon", "pffft", "uhhhh", "hmm", "hmmm", "hm", "omg", "ok", "wow", "ok",
-                           "tbh", "aw"]
+                           "tbh", "aw", "oops", "wtf", "pls", "ya", "arrr", "woohoo", "yep", "yay", "thx"]
 
 lexicon["timeadverbial"] = ["afterwards", "again", "earlier", "early", "eventually", "formerly", "immediately",
                             "initially", "instantly", "late", "lately", "later", "momentarily", "now", "nowadays",
                             "once", "originally", "presently", "previously", "recently", "shortly", "simultaneously",
                             "soon", "subsequently", "today", "tomorrow", "tonight", "yesterday"]
 
-lexicon["excitement"] = []
+lexicon["excitement"] = ["excited", "fun", "exciting"]
+
+lexicon["embarrassing"] = ["embarrassing", "dorky", "ridiculous"]
+
 lexicon["boredom"] = ["bereft", "bored", "boring", "cautious", "cautiously", "cheerless", "cheerlessly",
                       "cheerlessness", "deject", "dejected", "depress", "depressed", "depressing", "depression",
                       "depressive", "desolate", "desolation", "despair", "despairingly", "dingy", "discourage",
@@ -765,8 +777,7 @@ lexicon["love"] = ["gorgeous", "allure", "allured", "allures", "alluring", "allu
                    "sexiest", "sexkitten", "sexpot", "sexual", "sexuales", "sexualised", "sexually", "sexxxy",
                    "sexxy", "sexy", "smokin", "spicy", "sssssssssssmokin", "steamingly", "steamy", "stunna",
                    "stunner", "stunners", "stunning", "sumptuous", "sumptuously", "sumptuousness", "sweet",
-                   "sweetest", "sweetheart", "sweethearts", "tantalize",
-                                                                                                                                                                                                                                                                                                                                                                                                                                         "tantalized", "tantalizes", "tantalizing", "tantalizingly", "tender", "tendered", "tenderest", "voluptuous",
+                   "sweetest", "sweetheart", "sweethearts", "tantalize",                                                                                                                                                                                                                                                                                                                                                                          "tantalized", "tantalizes", "tantalizing", "tantalizingly", "tender", "tendered", "tenderest", "voluptuous",
                    "voluptuously", "voluptuousness", "wild", "wilder", "wildest", "wildly"]
 
 lexicon["placeadverbial"] = ["aboard", "above", "abroad", "across", "ahead", "alongside", "around", "ashore",
@@ -776,6 +787,26 @@ lexicon["placeadverbial"] = ["aboard", "above", "abroad", "across", "ahead", "al
                              "overland", "overseas", "south", "underfoot", "underground", "underneath", "uphill",
                              "upstairs", "upstream", "west"]
 
+lexicon["thank"] = ["thank", "thanks", "grateful", "thankful", "gratefully", "thx"]
+
+lexicon["women"] = ["female", "lady", "ladies", "woman", "women", "she", "her", "herself", "females"]
+lexicon["family"] = ["children", "sons", "daughters", "sisters", "brothers", "husbands", "wives", "mothers", "fathers",
+                     "grandfathers", "grandmothers", "uncles", "aunts", "cousins", "nephews", "nieces",
+                     "siblings",
+                     "child", "son", "daughter", "sister", "brother", "husband", "wife", "mother", "father",
+                     "grandfather", "grandmother", "grandpa", "grandma", "uncle", "aunt", "cousin", "nephew", "niece",
+                     "sibling",
+                     "child's", "son's", "daughter's", "sister's", "brother's", "husband's", "wife's", "mother's",
+                     "father's",
+                     "grandfather's", "grandmother's", "grandpa's", "grandma's", "uncle's", "aunt's", "cousin's",
+                     "nephew's", "niece's",
+                     "sibling's",
+                     "childrens'", "sons'", "daughters'", "sisters'", "brothers'", "husbands'", "wives'", "mothers'",
+                     "fathers'",
+                     "grandfathers'", "grandmothers'", "uncles'", "aunts'", "cousins'", "nephews'", "nieces'",
+                     "siblings'",
+                     "family", "families", "families'", "family's"
+                     ]
 
 
 def featurise(text, loglevel=False):
@@ -797,7 +828,8 @@ def featurise(text, loglevel=False):
 goodgenderones = ["JiKlove", "JiKp1", "JiKp1sgsubj",
                   "JiKamplifySurprise", "JiKinterjection", "JiKp2", "JiKPROGRESSIVE", "JiKPAST", "JiKshould",
                   "JiKbe", "JiKwill", "JiKinsecure", "JiKplaceadverbial", "JiKthinkverbs", "JiKPASSIVE",
-                  "JiKsayverbs", "JiKprofanity", "JiKwould", "JiKhedgelist"]
+                  "JiKsayverbs", "JiKprofanity", "JiKwould", "JiKhedgelist", "JiKexciting", "JiKembarrassing",
+                  "JiKthank", "JiKwomen", "JiKfamily"]
 
 
 mediocremale = ["JiKp1plsubj",
@@ -807,6 +839,4 @@ mediocrefemale = ["JiKcan", "JiKp2subj",
                                        "JiKamplifyTruly", "JiKhate", "JiKamplifier", "JiKpositive"]
 
 mediocregenderones = goodgenderones + mediocrefemale + mediocremale
-
-
 
