@@ -115,7 +115,7 @@ for file in filenamelist:
             hit = True
             poses = squintinglinguist.mildpositems(origtext)
             posttriplevector = stringspace.postriplevector(poses)
-2            avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
+            avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
         workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
     nn += 1
     if not hit:
