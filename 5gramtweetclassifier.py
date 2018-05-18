@@ -115,7 +115,7 @@ for file in filenamelist:
             hit = True
             poses = squintinglinguist.mildpositems(origtext)
             posttriplevector = stringspace.postriplevector(poses)
-            avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
+2            avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
         workingvector = sparsevectors.sparseadd(workingvector, sparsevectors.normalise(avector))
     nn += 1
     if not hit:
@@ -180,7 +180,6 @@ for item in testitemspace.items():
             targetscore[targetspace.category[neighbour]] += 1
     sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
     prediction = sortedpredictions[0]
-    logger("Tested " + testitemspace.name[item] + ": " + prediction + " " + facit[testitemspace.name[item]], debug)
     confusionmatrix.addconfusion(facit[testitemspace.name[item]], prediction)
     with open(outputdirectory + testitemspace.name[item] + ".xml", "w") as outfile:
         print("<author id=\"" + testitemspace.name[item] + "\"", file=outfile)
