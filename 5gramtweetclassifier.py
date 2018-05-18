@@ -3,7 +3,6 @@ import re
 import sys
 import pickle
 import xml.etree.ElementTree
-import confusionmatrix
 
 os.environ["CORENLP_HOME"] = "/usr/share/stanford-corenlp-full/"
 
@@ -153,7 +152,6 @@ if averagelinkage:
 if votelinkage:
     logger("Votelinkage", monitor)
 
-confusionmatrix = confusionmatrix.ConfusionMatrix()
 nn = 0
 for item in testitemspace.items():
     nn += 1
@@ -180,7 +178,6 @@ for item in testitemspace.items():
             targetscore[targetspace.category[neighbour]] += 1
     sortedpredictions = sorted(categories, key=lambda ia: targetscore[ia], reverse=True)
     prediction = sortedpredictions[0]
-    confusionmatrix.addconfusion(facit[testitemspace.name[item]], prediction)
     with open(outputdirectory + testitemspace.name[item] + ".xml", "w") as outfile:
         print("<author id=\"" + testitemspace.name[item] + "\"", file=outfile)
         print("        lang=\"en\"", file=outfile)
@@ -188,5 +185,4 @@ for item in testitemspace.items():
         print("/>", file=outfile)
         logger("Run output to " + outputdirectory + testitemspace.name[item] + ".xml", monitor)
 logger("Done testing files.", monitor)
-confusionmatrix.evaluate()
 
