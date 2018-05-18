@@ -825,6 +825,7 @@ def featurise(text, loglevel=False):
     return features
 
 
+
 goodgenderones = ["JiKlove", "JiKp1", "JiKp1sgsubj",
                   "JiKamplifySurprise", "JiKinterjection", "JiKp2", "JiKPROGRESSIVE", "JiKPAST", "JiKshould",
                   "JiKbe", "JiKwill", "JiKinsecure", "JiKplaceadverbial", "JiKthinkverbs", "JiKPASSIVE",
@@ -832,10 +833,10 @@ goodgenderones = ["JiKlove", "JiKp1", "JiKp1sgsubj",
                   "JiKthank", "JiKwomen", "JiKfamily"]
 
 
-mediocremale = ["JiKp1plsubj",
+mediocremale = ["JiKp1plsubj", "JiKmotionverbs",
                                        "JiKsurprise", "JiKVERYLATEMAINV", "JiKcould", "JiKdislike", "JiKhave",
                                        "JiKFUTURE", "JiKboredom", "JiKp3", "JiKEARLYMAINV"]
-mediocrefemale = ["JiKcan", "JiKp2subj",
+mediocrefemale = ["JiKcan", "JiKp2subj", "JiKNEGATION",
                                        "JiKamplifyTruly", "JiKhate", "JiKamplifier", "JiKpositive"]
 
 mediocregenderones = goodgenderones + mediocrefemale + mediocremale
@@ -848,7 +849,7 @@ def mildpositems(string, full=False):
         returnposes = [("START", "START")]
         for p in poses:
             if p[1] in leaveintags:
-                returnposes.append((p[1],p[1]))
+                returnposes.append((p[1],p[0]))
             else:
                 returnposes.append(p)
         returnposes.append(("END","END"))
