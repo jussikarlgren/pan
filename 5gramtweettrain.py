@@ -126,7 +126,8 @@ with open(categorymodelfilename, "wb") as outfile:
                     avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(fv),
                                                       stringspace.frequencyweight(feature))
             if postriples:
-                posttriplevector = stringspace.postriplevector(origtext)
+                poses = squintinglinguist.mildpositems(origtext)
+                posttriplevector = stringspace.postriplevector(poses)
                 avector = sparsevectors.sparseadd(avector, sparsevectors.normalise(posttriplevector))
             if textcategorisation:
                 textindex += 1

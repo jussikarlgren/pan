@@ -11,7 +11,7 @@ error = True
 
 
 class StringSequenceSpace:
-    def __init__(self, dimensionality=2000, denseness=10, window=5, bin=True):
+    def __init__(self, dimensionality=2000, denseness=10, window=5, bin=False):
         self.indexspace = {}
         self.binaryfrequencies = bin
         self.dimensionality = dimensionality
@@ -55,6 +55,7 @@ class StringSequenceSpace:
         else:
             words = nltk.word_tokenize(string)
         for w in words:
+            self.bign += 1
             if w in self.globalfrequency:
                 self.globalfrequency[w] += 1
             else:
@@ -86,11 +87,16 @@ class StringSequenceSpace:
                 else:
                     factor = 1
                 if w not in self.indexspace:
-                    self.indexspace[w] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
+                    self.additem(w)
+                else:
+                    self.observe(w)
                 uvector = sparsevectors.sparseadd(uvector, sparsevectors.normalise(self.indexspace[w]), factor)
         return uvector
 
-
+    def additem(self, item):
+        self.indexspace[item] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
+        self.globalfrequency[item] = 1
+        self.bign += 1
 
     def saveelementspace(self, filename):
         with open(filename, "wb") as outfile:
@@ -112,14 +118,18 @@ class StringSequenceSpace:
                 for i in nonzeros[split:]:
                     vec[i] = -1
                 self.indexspace[character] = vec
+                self.globalfrequency[character] = 1
+                self.bign += 1
             stringvector = sparsevectors.sparseadd(sparsevectors.sparseshift(stringvector, self.dimensionality),
                                                    self.indexspace[character])
             # np.append(stringvector[1:], stringvector[0]) + self.indexspace[character]
         return stringvector  # lil_matrix(stringvector.reshape(self.dimensionality, -1))
 
     def frequencyweight(self, word):
+        l = 500
         try:
-            w = math.exp(-300 * math.pi * int(self.globalfrequency[word]) / self.bign)
+            w = math.exp(-l * self.globalfrequency[word] / self.bign)
+            # w = math.exp(-300 * math.pi * int(self.globalfrequency[word]) / self.bign)
         except KeyError:
             w = 0.5
         return w
@@ -127,10 +137,13 @@ class StringSequenceSpace:
     def getvector(self, word, loglevel=False):
         if word not in self.indexspace:
             logger("Made new vector for " + word, loglevel)
-            self.indexspace[word] = sparsevectors.newrandomvector(self.dimensionality, self.denseness)
+            self.additem(word)
+        else:
+            self.observe(word, loglevel)
         return self.indexspace[word]
 
-    def postriplevector(self, poses, poswindow=3):
+    def postriplevector(self, text, poswindow=3):
+        poses = nltk.pos_tag(text)
         windows = [poses[ii:ii + poswindow] for ii in range(len(poses) - poswindow + 1 + 2)]
         onevector = self.pospermutations["vector"]
         vector = sparsevectors.newemptyvector(self.dimensionality)
