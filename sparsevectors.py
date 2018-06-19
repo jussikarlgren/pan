@@ -55,6 +55,20 @@ def sparsexor(onevec, othvec):
 def newemptyvector(n):
     return {}
 
+def inverse(originalvector, dim):
+    vector = newemptyvector(dim)
+    for i in range(dim):
+        if i not in originalvector:
+            vector[i] = 1
+    return vector
+
+
+def newfullvector(n, val=1):
+    vector = {}
+    for i in range(n):
+        vector[i] = val
+    return vector
+
 def newrandomvector(n, denseness):
     vec = {}
     if denseness % 2 != 0:
@@ -146,6 +160,13 @@ def normalise(vec):
         newvector = vec
     return newvector
 
+def concatenate(vec1, dim1, vec2):
+    vector = {}
+    for i in vec1:
+        vector[i] = vec1[i]
+    for i in vec2:
+        vector[i + dim1] = vec2[i]
+    return vector
 
 def modify(vec, factor):
     newvector = {}
@@ -185,3 +206,25 @@ def vectorsaturation(vector):
 def sparseshift(vector, dimensionality, step=1):
     p = list(range(0, dimensionality))
     return permute(vector, p[step:] + p[:step])
+
+
+def reweight(vector, weight):
+    for i in vector:
+        vector[i] = vector[i] * weight
+    return vector
+
+
+def euclidean(vector, othervector):
+    # dense s = [(vector[a] - othervector[a]) ** 2 for a in vector if a in othervector]
+    # keys = set(vector.keys())
+    # keys.update(othervector.keys())
+    s = []
+    for i in vector:
+        if i in othervector:
+            s.append((vector[i] - othervector[i]) ** 2)
+        else:
+            s.append(vector[i] ** 2)
+    for j in othervector:
+        if j not in vector:
+            s.append(othervector[j] ** 2)
+    return math.sqrt(sum(s))
