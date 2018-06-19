@@ -2,9 +2,10 @@ class ConfusionMatrix:
     '''ConfusionMatrix keeps book over a categorisation excercise, most notably its errors.'''
     def __init__(self):
         self.confusionmatrix = {}
-        self.gold = set()
-        self.glitter = set()
-        self.weight = {}
+        self.gold = set()         # actual labels
+        self.glitter = set()      # predicted labels
+        self.weight = {}          # number of actual items for a category
+        self.glitterweight = {}   # number of items with a category label
         self.carat = {}
         self.macro = 0
         self.micro = 0
@@ -26,10 +27,9 @@ class ConfusionMatrix:
     def evaluate(self, full=True):
         # HEADER LINE
         print("\t\t|\t", end="")
-        glitterweight = {}
         for glitterlabel in sorted(self.glitter):
             print(glitterlabel, end="\t")
-            glitterweight[glitterlabel] = 0
+            self.glitterweight[glitterlabel] = 0
         print("|", "sum", "correct", "recall", sep="\t")
         # SEPARATOR LINE
         for gg in range(2 + len(self.glitter)):
@@ -46,7 +46,7 @@ class ConfusionMatrix:
                 try:
                     print(self.confusionmatrix[goldlabel][glitterlabel], "\t", end="")
                     self.weight[goldlabel] += self.confusionmatrix[goldlabel][glitterlabel]
-                    glitterweight[glitterlabel] += self.confusionmatrix[goldlabel][glitterlabel]
+                    self.glitterweight[glitterlabel] += self.confusionmatrix[goldlabel][glitterlabel]
                     if glitterlabel == goldlabel:
                         self.carat[goldlabel] = self.confusionmatrix[goldlabel][glitterlabel]
                 except KeyError:
@@ -66,8 +66,8 @@ class ConfusionMatrix:
         print("sum", "|", sep="\t\t", end="\t")
         vsum = 0
         for glitterlabel in sorted(self.glitter):
-            vsum += glitterweight[glitterlabel]
-            print(glitterweight[glitterlabel], "\t", end="")
+            vsum += self.glitterweight[glitterlabel]
+            print(self.glitterweight[glitterlabel], "\t", end="")
         if hsum > 0:
             self.macro = self.macro / len(self.gold)
             self.micro = correct / hsum
@@ -83,9 +83,9 @@ class ConfusionMatrix:
         # PRECISION LINE
         print("precision", "|", sep="\t", end="\t")
         for glitterlabel in sorted(self.glitter):
-            if glitterweight[glitterlabel] > 0:
+            if self.glitterweight[glitterlabel] > 0:
                 try:
-                    print(self.carat[glitterlabel] / glitterweight[glitterlabel], "\t", end="")
+                    print(self.carat[glitterlabel] / self.glitterweight[glitterlabel], "\t", end="")
                 except KeyError:
                     print("0.0", "\t", end="")
             else:
