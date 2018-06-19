@@ -8,7 +8,7 @@ from logger import logger
 urlpatternexpression = re.compile(r"https?://[/A-Za-z0-9\.\-\?_]+", re.IGNORECASE)
 handlepattern = re.compile(r"@[A-Za-z0-9_\-±.]+", re.IGNORECASE)
 verbtags = ["VB", "VBZ", "VBP", "VBN", "VBD", "VBG"]
-
+adjectivetags = ["JJ", "JJR", "JJS"]
 def words(text):
     words = word_tokenize(text)
     return words
@@ -28,12 +28,12 @@ def generalise(text, handlesandurls=True, nouns=True, verbs=True, adjectives=Tru
                 accumulator.append("N")
             elif nouns and item[1] == "NNS":
                 accumulator.append("Ns")
-            elif adjectives and item[1] == "JJ":
-                accumulator.append("A")
+            elif adjectives and item[1] in adjectivetags:
+                accumulator.append(item[1])
             elif verbs and item[1] in verbtags:
                 tag = item[1]
                 if tag == "VBZ":
-                    tag = "VBP"
+                    tag = "VBP"  #  neutralise for 3d present -- VBP is present
                 accumulator.append(tag)
             elif adverbs and item[1] == "RB":
                 accumulator.append("R")
